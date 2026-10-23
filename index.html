@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cue! – Toneeltekst Leerapp</title>
+<!-- PDF.js van Mozilla voor directe PDF-tekstextractie -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
 <style>
 body{margin:0;background:#f3f4f6;font-family:system-ui,sans-serif;color:#111}
 header{background:#20242a;color:#fff;padding:18px} main{max-width:950px;margin:auto;padding:14px}
@@ -43,8 +47,8 @@ details{border:1px solid var(--border);background:var(--panel);border-radius:16p
 
 <div id="cue-auth-modal">
   <div id="cue-auth-box">
-    <h2 style="margin-top:0">Beveiligde toegang</h2>
-    <p class="subtitle" id="cue-auth-msg" style="font-size:14px">Voer het wachtwoord in om de app te openen.</p>
+    <h2 style="margin-top:0" id="cue-auth-header">Beveiligde toegang</h2>
+    <p class="subtitle" id="cue-auth-msg" style="font-size:14px">Controleren van beveiliging...</p>
     <input type="password" id="cue-auth-input" placeholder="Wachtwoord" style="width:100%;box-sizing:border-box;padding:12px;margin-bottom:12px">
     <button id="cue-auth-submit" class="primary" style="width:100%">Inloggen</button>
   </div>
@@ -85,66 +89,88 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 window.cueDb = db;
 window.cueFb = { collection, getDocs, doc, getDoc, setDoc };
+window.cueSecretKey = sessionStorage.getItem("cue_secret_key") || "";
 
-// SHA-256 Hash helper
 async function sha256(str) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function verifyAuth(enteredPassword) {
-  const inputHash = await sha256(enteredPassword);
-  const authDocRef = doc(db, "_security", "auth");
-  const authDoc = await getDoc(authDocRef);
-
-  if (!authDoc.exists()) {
-    // Eerste keer: sla het ingevoerde wachtwoord direct op als gehashte standaard
-    await setDoc(authDocRef, { passwordHash: inputHash });
-    sessionStorage.setItem("cue_auth", "true");
-    return true;
-  }
-
-  if (authDoc.data().passwordHash === inputHash) {
-    sessionStorage.setItem("cue_auth", "true");
-    return true;
-  }
-  return false;
-}
-
 const authModal = document.getElementById('cue-auth-modal');
+const authHeader = document.getElementById('cue-auth-header');
 const authInput = document.getElementById('cue-auth-input');
 const authSubmit = document.getElementById('cue-auth-submit');
 const authMsg = document.getElementById('cue-auth-msg');
+
+let isInitialSetup = false;
+
+async function checkAuthStatus() {
+  if (sessionStorage.getItem("cue_auth") === "true") {
+    authModal.style.display = 'none';
+    window.dispatchEvent(new Event('cue-auth-success'));
+    return;
+  }
+  try {
+    const authDocRef = doc(db, "_security", "auth");
+    const snap = await getDoc(authDocRef);
+    if (!snap.exists() || !snap.data().passwordHash) {
+      isInitialSetup = true;
+      authHeader.textContent = "Wachtwoord Instellen";
+      authMsg.textContent = "Er is nog geen wachtwoord ingesteld. Kies een wachtwoord voor alle gebruikers:";
+      authSubmit.textContent = "Wachtwoord opslaan";
+    } else {
+      isInitialSetup = false;
+      authHeader.textContent = "Beveiligde toegang";
+      authMsg.textContent = "Voer het wachtwoord in om de app te openen:";
+      authSubmit.textContent = "Inloggen";
+    }
+  } catch(e) {
+    authMsg.textContent = "Verbinding maken: controleer je internet of database permissies.";
+  }
+}
 
 async function handleLogin() {
   const val = authInput.value.trim();
   if (!val) return;
   authSubmit.disabled = true;
-  authSubmit.textContent = "Controleren...";
+  authSubmit.textContent = "Verwerken...";
+
   try {
-    const ok = await verifyAuth(val);
-    if (ok) {
+    const inputHash = await sha256(val);
+    const authDocRef = doc(db, "_security", "auth");
+
+    if (isInitialSetup) {
+      await setDoc(authDocRef, { passwordHash: inputHash });
+      sessionStorage.setItem("cue_auth", "true");
+      sessionStorage.setItem("cue_secret_key", val);
+      window.cueSecretKey = val;
       authModal.style.display = 'none';
       window.dispatchEvent(new Event('cue-auth-success'));
     } else {
-      authMsg.textContent = "Onjuist wachtwoord. Probeer opnieuw.";
-      authMsg.style.color = "#ff6b6b";
+      const snap = await getDoc(authDocRef);
+      if (snap.exists() && snap.data().passwordHash === inputHash) {
+        sessionStorage.setItem("cue_auth", "true");
+        sessionStorage.setItem("cue_secret_key", val);
+        window.cueSecretKey = val;
+        authModal.style.display = 'none';
+        window.dispatchEvent(new Event('cue-auth-success'));
+      } else {
+        authMsg.textContent = "Onjuist wachtwoord. Probeer opnieuw.";
+        authMsg.style.color = "#ff6b6b";
+      }
     }
   } catch (e) {
-    authMsg.textContent = "Fout bij inloggen: " + e.message;
+    authMsg.textContent = "Fout: " + e.message;
     authMsg.style.color = "#ff6b6b";
   }
   authSubmit.disabled = false;
-  authSubmit.textContent = "Inloggen";
+  authSubmit.textContent = isInitialSetup ? "Wachtwoord opslaan" : "Inloggen";
 }
 
 authSubmit.onclick = handleLogin;
 authInput.onkeydown = e => { if (e.key === 'Enter') handleLogin(); };
 
-if (sessionStorage.getItem("cue_auth") === "true") {
-  authModal.style.display = 'none';
-  setTimeout(() => window.dispatchEvent(new Event('cue-auth-success')), 50);
-}
+checkAuthStatus();
 </script>
 
 <script>
@@ -221,7 +247,6 @@ $('reveal').onclick=()=>{if(practicing){revealed=true;render()}};
 $('role').onchange=()=>practicing?start():readScene();
 $('scene').onchange=()=>{si=+$('scene').value;readScene()};
 
-// Toneelstukken inladen via Firebase Firestore
 window.addEventListener('cue-auth-success', async () => {
   $('status').textContent = 'Toneelstukken laden uit cloud...';
   try {
@@ -592,7 +617,8 @@ window.cueVoiceForRole = function (role) {
       title: currentScript.title,
       roles: D.roles,
       scenes: D.scenes,
-      roleVoices: D.roleVoices || {}
+      roleVoices: D.roleVoices || {},
+      secretKey: window.cueSecretKey || ""
     });
   }
 
@@ -679,8 +705,12 @@ window.cueVoiceForRole = function (role) {
     loadScene(index);
     refreshAfterDeletion();
     $('edit-status').textContent = 'Bezig met synchroniseren...';
-    await persistScriptToFirebase();
-    $('edit-status').textContent = '✓ Repliek verwijderd en gesynchroniseerd.';
+    try {
+      await persistScriptToFirebase();
+      $('edit-status').textContent = '✓ Repliek verwijderd en gesynchroniseerd.';
+    } catch(e) {
+      $('edit-status').textContent = 'Fout bij verwijderen: ' + e.message;
+    }
   };
 
   $('edit-undo-delete').onclick = async () => {
@@ -693,8 +723,12 @@ window.cueVoiceForRole = function (role) {
     loadScene(index);
     refreshAfterDeletion();
     $('edit-status').textContent = 'Bezig met herstellen...';
-    await persistScriptToFirebase();
-    $('edit-status').textContent = '✓ Repliek hersteld in database.';
+    try {
+      await persistScriptToFirebase();
+      $('edit-status').textContent = '✓ Repliek hersteld in database.';
+    } catch(e) {
+      $('edit-status').textContent = 'Fout bij herstellen: ' + e.message;
+    }
   };
 
   window.addEventListener('cue-script-changed', () => {
@@ -834,14 +868,28 @@ window.cueDocxText = async function (buffer) {
   throw new Error('Geen tekst gevonden. Een scan moet eerst met tekstherkenning worden omgezet.');
 };
 
+window.cuePdfText = async function (buffer) {
+  const loadingTask = pdfjsLib.getDocument({ data: buffer });
+  const pdf = await loadingTask.promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map(item => item.str).join(' ');
+    fullText += pageText + '\n\n';
+  }
+  if (!fullText.trim()) throw new Error('Geen tekst gevonden in deze PDF. Waarschijnlijk is het een gescand document.');
+  return fullText;
+};
+
 (function () {
   const host = document.querySelector('main');
   const panel = document.createElement('section'); panel.className = 'speech-panel';
   panel.innerHTML = '<label><strong>Toneelstuk</strong><br><select id="script-choice" style="width:100%"></select></label>' +
     '<details style="margin-top:12px"><summary>＋ Script toevoegen aan Firebase</summary>' +
-    '<p>Importeer Word (.docx), tekst (.txt) of een Cue!-script (.json). Het stuk wordt direct per record opgeslagen in de cloud.</p>' +
+    '<p>Importeer Word (.docx), PDF (.pdf), tekst (.txt) of JSON. Het stuk wordt direct in de cloud bewaard.</p>' +
     '<label>Titel<br><input id="import-title" style="width:95%;padding:8px" placeholder="Titel van het toneelstuk"></label>' +
-    '<p><input id="import-file" type="file" accept=".docx,.txt,.json"></p>' +
+    '<p><input id="import-file" type="file" accept=".docx,.pdf,.txt,.json"></p>' +
     '<label>Tekst controleren en aanpassen<br><textarea id="import-text" rows="10" style="width:100%;box-sizing:border-box;font:inherit" placeholder="Scène 1&#10;EMMA: Hallo!&#10;CHATEAU: Goedemiddag."></textarea></label>' +
     '<p>Gebruik per repliek <b>ROL: tekst</b> en voor scènegrenzen <b>Scène 1</b>, <b>Scène 2</b>, enzovoort.</p>' +
     '<button id="import-check">Controleer script</button><button id="import-add" disabled>Voeg gecontroleerd script toe aan Firebase</button>' +
@@ -875,15 +923,20 @@ window.cueDocxText = async function (buffer) {
     invalidate(); jsonCandidate = null;
     $('import-status').textContent = 'Bestand lezen…';
     try {
-      $('import-title').value = file.name.replace(/\.(docx|txt|json)$/i, '').replace(/_/g, ' ');
-      if (/\.docx$/i.test(file.name)) $('import-text').value = await window.cueDocxText(await file.arrayBuffer());
-      else if (/\.json$/i.test(file.name)) {
+      $('import-title').value = file.name.replace(/\.(docx|pdf|txt|json)$/i, '').replace(/_/g, ' ');
+      if (/\.docx$/i.test(file.name)) {
+        $('import-text').value = await window.cueDocxText(await file.arrayBuffer());
+      } else if (/\.pdf$/i.test(file.name)) {
+        $('import-text').value = await window.cuePdfText(await file.arrayBuffer());
+      } else if (/\.json$/i.test(file.name)) {
         const json = JSON.parse(await file.text());
         jsonCandidate = window.cueValidateScript(json.data || json);
         if (json.title) $('import-title').value = json.title;
         $('import-text').value = jsonCandidate.scenes.map(scene => scene.title + '\n' + scene.cards.map(card => card.role + ': ' + card.text).join('\n')).join('\n\n');
-      } else $('import-text').value = await file.text();
-      $('import-status').textContent = 'Bestand ingelezen. Klik op “Controleer script” en bekijk de rollen en replieken.';
+      } else {
+        $('import-text').value = await file.text();
+      }
+      $('import-status').textContent = 'Bestand ingelezen. Klik op “Controleer script” en bekijk het resultaat.';
     } catch (error) { $('import-status').textContent = error.message; }
   };
 
@@ -911,7 +964,8 @@ window.cueDocxText = async function (buffer) {
         title: candidate.title,
         roles: candidate.data.roles,
         scenes: candidate.data.scenes,
-        roleVoices: candidate.data.roleVoices || {}
+        roleVoices: candidate.data.roleVoices || {},
+        secretKey: window.cueSecretKey || ""
       });
       
       const existingIdx = CUE_LIBRARY.scripts.findIndex(s => s.id === candidate.id);
