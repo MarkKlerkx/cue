@@ -94,7 +94,7 @@ import {
   getFirestore, collection, getDocs, doc, getDoc, setDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const firebaseConfig = {
+const DEFAULT_FIREBASE_CONFIG = {
   apiKey: "AIzaSyA0pmmN4yQzzyJjFUi6BVyz4z1g7yPMogM",
   authDomain: "cue-text-7633c.firebaseapp.com",
   projectId: "cue-text-7633c",
@@ -102,6 +102,18 @@ const firebaseConfig = {
   messagingSenderId: "661898197501",
   appId: "1:661898197501:web:133d1a497d7b9eb839c194"
 };
+window.cueDefaultFirebaseConfig = DEFAULT_FIREBASE_CONFIG;
+
+function getFirebaseConfig() {
+  try {
+    const custom = localStorage.getItem("cue_firebase_config");
+    if (custom) return { ...DEFAULT_FIREBASE_CONFIG, ...JSON.parse(custom) };
+  } catch (e) {}
+  return { ...DEFAULT_FIREBASE_CONFIG };
+}
+
+const firebaseConfig = getFirebaseConfig();
+window.cueFirebaseConfig = firebaseConfig;
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -1126,18 +1138,51 @@ document.addEventListener('DOMContentLoaded',()=>{
  fbSection.className = 'speech-panel';
  fbSection.id = 'cue-firebase-settings-panel';
  fbSection.innerHTML = `
-   <h3 style="margin-top:0">🔑 Firebase Beveiliging</h3>
+   <h3 style="margin-top:0">🔑 Firebase Beveiliging & Database</h3>
    <p class="subtitle" style="font-size:14px;margin-bottom:12px;line-height:1.5">
-     Dit wachtwoord (de <code>secretKey</code>) is vereist om toneelstukken, spelers, stemmen en wijzigingen op te slaan in Firebase.
+     Beheer hier het beheerderswachtwoord (de <code>secretKey</code>) en de Firebase projectinstellingen (API Keys).
    </p>
+   <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:700">Firebase Wachtwoord (secretKey in security rules)</label>
    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
      <div style="position:relative;flex:1;min-width:220px">
        <input type="password" id="cue-settings-fb-key" placeholder="Firebase secretKey" style="width:100%;box-sizing:border-box;padding:12px 42px 12px 12px;border-radius:10px;border:1px solid var(--border);background:#102b40;color:var(--text);font:inherit">
        <button type="button" id="cue-settings-fb-toggle" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;font-size:16px;min-height:auto;padding:4px" title="Wachtwoord tonen/verbergen">👁️</button>
      </div>
-     <button type="button" id="cue-settings-fb-save" class="primary" style="min-height:44px;padding:8px 20px">Opslaan</button>
+     <button type="button" id="cue-settings-fb-save" class="primary" style="min-height:44px;padding:8px 20px">Wachtwoord opslaan</button>
    </div>
-   <p id="cue-settings-fb-status" style="font-size:13px;margin:10px 0 0 0" aria-live="polite"></p>
+   <p id="cue-settings-fb-status" style="font-size:13px;margin:8px 0 16px 0" aria-live="polite"></p>
+
+   <details style="border:1px solid var(--border);border-radius:12px;padding:14px;background:#081f30;margin-top:14px">
+     <summary style="cursor:pointer;font-weight:700;color:var(--yellow)">⚙ Firebase API Keys & Projectconfiguratie</summary>
+     <p class="subtitle" style="font-size:13px;margin:10px 0 14px;line-height:1.5">
+       Hieronder staan de actieve Firebase API-parameters. Je kunt deze aanpassen voor een ander Firebase-project. Na het opslaan herlaadt de pagina automatisch.
+     </p>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+       <label style="font-size:12px;color:var(--muted)">API Key<br>
+         <input type="text" id="cue-cfg-apiKey" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;margin-top:4px">
+       </label>
+       <label style="font-size:12px;color:var(--muted)">Project ID<br>
+         <input type="text" id="cue-cfg-projectId" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;margin-top:4px">
+       </label>
+       <label style="font-size:12px;color:var(--muted)">Auth Domain<br>
+         <input type="text" id="cue-cfg-authDomain" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;margin-top:4px">
+       </label>
+       <label style="font-size:12px;color:var(--muted)">Storage Bucket<br>
+         <input type="text" id="cue-cfg-storageBucket" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;margin-top:4px">
+       </label>
+       <label style="font-size:12px;color:var(--muted)">Messaging Sender ID<br>
+         <input type="text" id="cue-cfg-messagingSenderId" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;margin-top:4px">
+       </label>
+       <label style="font-size:12px;color:var(--muted)">App ID<br>
+         <input type="text" id="cue-cfg-appId" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;margin-top:4px">
+       </label>
+     </div>
+     <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+       <button type="button" id="cue-cfg-save" class="primary" style="padding:8px 18px">API Keys opslaan & herladen</button>
+       <button type="button" id="cue-cfg-reset" style="padding:8px 16px;background:#17384c">Herstel standaarden</button>
+     </div>
+     <p id="cue-cfg-status" style="font-size:13px;margin:10px 0 0 0" aria-live="polite"></p>
+   </details>
  `;
 
  const sInput = fbSection.querySelector('#cue-settings-fb-key');
@@ -1159,13 +1204,56 @@ document.addEventListener('DOMContentLoaded',()=>{
    setTimeout(() => { sStatus.textContent = ''; }, 4000);
  };
 
+ function fillFirebaseConfigFields() {
+   const cfg = window.cueFirebaseConfig || window.cueDefaultFirebaseConfig || {};
+   ['apiKey', 'projectId', 'authDomain', 'storageBucket', 'messagingSenderId', 'appId'].forEach(k => {
+     const el = fbSection.querySelector('#cue-cfg-' + k);
+     if (el) el.value = cfg[k] || '';
+   });
+ }
+ fillFirebaseConfigFields();
+
+ const cfgSave = fbSection.querySelector('#cue-cfg-save');
+ const cfgReset = fbSection.querySelector('#cue-cfg-reset');
+ const cfgStatus = fbSection.querySelector('#cue-cfg-status');
+
+ cfgSave.onclick = () => {
+   const updated = {
+     apiKey: fbSection.querySelector('#cue-cfg-apiKey').value.trim(),
+     projectId: fbSection.querySelector('#cue-cfg-projectId').value.trim(),
+     authDomain: fbSection.querySelector('#cue-cfg-authDomain').value.trim(),
+     storageBucket: fbSection.querySelector('#cue-cfg-storageBucket').value.trim(),
+     messagingSenderId: fbSection.querySelector('#cue-cfg-messagingSenderId').value.trim(),
+     appId: fbSection.querySelector('#cue-cfg-appId').value.trim()
+   };
+   if (!updated.apiKey || !updated.projectId) {
+     alert('Vul minimaal de API Key en Project ID in.');
+     return;
+   }
+   localStorage.setItem('cue_firebase_config', JSON.stringify(updated));
+   cfgStatus.style.color = 'var(--green)';
+   cfgStatus.textContent = '✓ Firebase configuratie opgeslagen! De app wordt herladen...';
+   setTimeout(() => location.reload(), 1200);
+ };
+
+ cfgReset.onclick = () => {
+   if (confirm('Weet je zeker dat je de standaard Firebase API keys wilt herstellen?')) {
+     localStorage.removeItem('cue_firebase_config');
+     fillFirebaseConfigFields();
+     cfgStatus.style.color = 'var(--green)';
+     cfgStatus.textContent = '✓ Standaardconfiguratie hersteld! De app wordt herladen...';
+     setTimeout(() => location.reload(), 1200);
+   }
+ };
+
  settings.innerHTML='<h1>Instellingen en scripts</h1><p class="subtitle">Pas je oefening aan of werk je toneeltekst bij.</p>';
  settings.append(fbSection, options, editor);
  home.appendChild(library);main.replaceChildren(home,practice,settings);
  const nav=document.createElement('nav');nav.className='cue-nav';nav.setAttribute('aria-label','Hoofdnavigatie');nav.innerHTML='<button data-view="cue-home">⌂ &nbsp; Mijn stukken</button><button data-view="cue-practice">▷ &nbsp; Oefenen</button><button data-view="cue-settings">⚙ &nbsp; Instellingen</button>';document.body.appendChild(nav);
  function show(id){
-   if(id==='cue-settings' && sInput){
-     sInput.value = window.cueSecretKey || localStorage.getItem('cue_firebase_secret_key') || '';
+   if(id==='cue-settings'){
+     if(sInput) sInput.value = window.cueSecretKey || localStorage.getItem('cue_firebase_secret_key') || '';
+     fillFirebaseConfigFields();
    }
    [home,practice,settings].forEach(n=>n.hidden=n.id!==id);
    nav.querySelectorAll('button').forEach(b=>{if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
