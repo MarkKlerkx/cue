@@ -38,8 +38,8 @@ button,select,input,textarea{background:#102b40;color:var(--text);border:1px sol
 details{border:1px solid var(--border);background:var(--panel);border-radius:16px;padding:18px;margin:16px 0}summary{cursor:pointer;font-weight:700}details input,textarea{padding:12px!important}#role-voice-settings>div{border-color:var(--border)!important;background:transparent!important}#role-voice-settings select{width:auto}
 .play-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0}.play-tile{padding:24px;text-align:left;min-height:170px;background:linear-gradient(135deg,#17374d,#0a2031);border:1px solid var(--border)}.play-tile strong{display:block;font-size:24px;margin:18px 0 8px}.play-tile span{display:block;color:var(--muted);font-size:14px}.play-tile em{font-style:normal;color:var(--green);font-size:13px;display:block;margin-top:18px}.play-icon{font-size:26px;color:var(--yellow)}
 .cue-nav{position:fixed;bottom:0;left:0;right:0;background:#061a29f5;backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;justify-content:center;gap:8px;padding:12px 12px max(12px,env(safe-area-inset-bottom));z-index:20}.cue-nav button{border:0;background:transparent;color:var(--muted);width:140px;font-size:14px}.cue-nav button[aria-current=page]{color:var(--yellow);background:#142d3d}.back-home{margin-bottom:14px}.practice-heading{margin:0 0 20px}.grid{gap:16px}.add-play{width:100%;background:var(--yellow);color:#142132;font-weight:750}
-#cue-auth-modal{position:fixed;inset:0;background:#03131fee;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
-#cue-auth-box{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:26px;max-width:380px;width:100%;box-shadow:0 8px 30px #0008;text-align:center}
+#cue-auth-modal,#cue-firebase-modal{position:fixed;inset:0;background:#03131fee;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+#cue-auth-box,#cue-firebase-box{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:26px;max-width:390px;width:100%;box-shadow:0 8px 30px #0008;text-align:center}
 @media(max-width:650px){header{padding:24px 18px 12px}main{padding:12px 18px}.play-list{grid-template-columns:1fr;gap:12px}.play-tile{min-height:130px;padding:18px}.play-tile strong{font-size:22px;margin-top:10px}.toolbar button{flex:1 1 42%;font-size:14px}.card div{font-size:17px}.cue-nav button{width:33%}h1{font-size:25px}.grid{grid-template-columns:1fr}#role-voice-settings select{width:100%}}
 </style>
 </head>
@@ -51,6 +51,24 @@ details{border:1px solid var(--border);background:var(--panel);border-radius:16p
     <p class="subtitle" id="cue-auth-msg" style="font-size:14px">Controleren van beveiliging...</p>
     <input type="password" id="cue-auth-input" placeholder="Wachtwoord" style="width:100%;box-sizing:border-box;padding:12px;margin-bottom:12px">
     <button id="cue-auth-submit" class="primary" style="width:100%">Inloggen</button>
+  </div>
+</div>
+
+<div id="cue-firebase-modal" style="display:none">
+  <div id="cue-firebase-box">
+    <div style="font-size:36px;margin-bottom:8px">🔑</div>
+    <h2 style="margin:0 0 8px 0;font-size:22px">Firebase Wachtwoord</h2>
+    <p class="subtitle" style="font-size:14px;line-height:1.5;margin-bottom:16px">
+      Voer het Firebase beheerderswachtwoord (secretKey) in om scripts te kunnen bewerken of op te slaan in de cloud.
+    </p>
+    <div style="position:relative;margin-bottom:14px">
+      <input type="password" id="cue-fb-popup-input" placeholder="Firebase secretKey" style="width:100%;box-sizing:border-box;padding:12px 42px 12px 14px;border-radius:10px;border:1px solid var(--border);background:#102b40;color:var(--text);font:inherit">
+      <button type="button" id="cue-fb-popup-toggle" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;font-size:16px;min-height:auto;padding:4px" title="Wachtwoord tonen/verbergen">👁️</button>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button id="cue-fb-popup-skip" type="button" style="flex:1;background:#17384c;border-color:var(--border)">Overslaan</button>
+      <button id="cue-fb-popup-save" type="button" class="primary" style="flex:1">Opslaan</button>
+    </div>
   </div>
 </div>
 
@@ -89,7 +107,64 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 window.cueDb = db;
 window.cueFb = { collection, getDocs, doc, getDoc, setDoc };
-window.cueSecretKey = sessionStorage.getItem("cue_secret_key") || "";
+window.cueSecretKey = localStorage.getItem("cue_firebase_secret_key") || sessionStorage.getItem("cue_secret_key") || "";
+
+window.showFirebaseSecretModal = function() {
+  const fbModal = document.getElementById('cue-firebase-modal');
+  if (fbModal) {
+    const input = document.getElementById('cue-fb-popup-input');
+    if (input) input.value = window.cueSecretKey || '';
+    fbModal.style.display = 'flex';
+    if (input) setTimeout(() => input.focus(), 100);
+  }
+};
+
+function checkFirebaseSecretPrompt() {
+  const key = localStorage.getItem("cue_firebase_secret_key") || "";
+  window.cueSecretKey = key;
+  if (!key && !sessionStorage.getItem("cue_fb_prompt_dismissed")) {
+    window.showFirebaseSecretModal();
+  }
+}
+
+// Koppeling popup knoppen
+const fbModal = document.getElementById('cue-firebase-modal');
+const fbInput = document.getElementById('cue-fb-popup-input');
+const fbSaveBtn = document.getElementById('cue-fb-popup-save');
+const fbSkipBtn = document.getElementById('cue-fb-popup-skip');
+const fbToggleBtn = document.getElementById('cue-fb-popup-toggle');
+
+if (fbToggleBtn && fbInput) {
+  fbToggleBtn.onclick = () => {
+    fbInput.type = fbInput.type === 'password' ? 'text' : 'password';
+  };
+}
+
+if (fbSaveBtn && fbInput) {
+  fbSaveBtn.onclick = () => {
+    const val = fbInput.value.trim();
+    if (!val) {
+      alert("Voer een Firebase wachtwoord in of klik op 'Overslaan'.");
+      return;
+    }
+    localStorage.setItem("cue_firebase_secret_key", val);
+    sessionStorage.setItem("cue_secret_key", val);
+    window.cueSecretKey = val;
+    fbModal.style.display = 'none';
+    const sInput = document.getElementById('cue-settings-fb-key');
+    if (sInput) sInput.value = val;
+  };
+  fbInput.onkeydown = e => {
+    if (e.key === 'Enter') fbSaveBtn.click();
+  };
+}
+
+if (fbSkipBtn) {
+  fbSkipBtn.onclick = () => {
+    sessionStorage.setItem("cue_fb_prompt_dismissed", "true");
+    fbModal.style.display = 'none';
+  };
+}
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
@@ -108,6 +183,7 @@ async function checkAuthStatus() {
   if (sessionStorage.getItem("cue_auth") === "true") {
     authModal.style.display = 'none';
     window.dispatchEvent(new Event('cue-auth-success'));
+    checkFirebaseSecretPrompt();
     return;
   }
   try {
@@ -142,18 +218,16 @@ async function handleLogin() {
     if (isInitialSetup) {
       await setDoc(authDocRef, { passwordHash: inputHash });
       sessionStorage.setItem("cue_auth", "true");
-      sessionStorage.setItem("cue_secret_key", val);
-      window.cueSecretKey = val;
       authModal.style.display = 'none';
       window.dispatchEvent(new Event('cue-auth-success'));
+      checkFirebaseSecretPrompt();
     } else {
       const snap = await getDoc(authDocRef);
       if (snap.exists() && snap.data().passwordHash === inputHash) {
         sessionStorage.setItem("cue_auth", "true");
-        sessionStorage.setItem("cue_secret_key", val);
-        window.cueSecretKey = val;
         authModal.style.display = 'none';
         window.dispatchEvent(new Event('cue-auth-success'));
+        checkFirebaseSecretPrompt();
       } else {
         authMsg.textContent = "Onjuist wachtwoord. Probeer opnieuw.";
         authMsg.style.color = "#ff6b6b";
@@ -587,8 +661,16 @@ window.cueVoiceForRole = function (role) {
       preview.disabled = !('speechSynthesis' in window);
       async function saveSetting() {
         D.roleVoices[role] = { gender: gender.value, voice: voice.value };
-        await persistScriptToFirebase();
-        $('edit-status').textContent = 'Stemkeuze opgeslagen in cloud.';
+        try {
+          await persistScriptToFirebase();
+          $('edit-status').textContent = 'Stemkeuze opgeslagen in cloud.';
+        } catch (err) {
+          if (err.message && (err.message.includes('permission') || err.message.includes('insufficient'))) {
+            $('edit-status').textContent = 'Fout bij stemkeuze: Onjuist Firebase wachtwoord. Controleer dit onder Instellingen.';
+          } else {
+            $('edit-status').textContent = 'Fout bij stemkeuze: ' + err.message;
+          }
+        }
       }
       gender.onchange = () => { voice.value = ''; saveSetting(); };
       voice.onchange = saveSetting;
@@ -612,13 +694,20 @@ window.cueVoiceForRole = function (role) {
   async function persistScriptToFirebase() {
     const currentScript = CUE_LIBRARY.scripts[currentScriptIndex];
     if (!currentScript || !window.cueDb) return;
+    const key = window.cueSecretKey || localStorage.getItem('cue_firebase_secret_key') || "";
+    if (!key) {
+      if (typeof window.showFirebaseSecretModal === 'function') {
+        window.showFirebaseSecretModal();
+      }
+      throw new Error("Geen Firebase wachtwoord (secretKey) ingevuld. Voer dit in via de popup of onder 'Instellingen'.");
+    }
     const ref = window.cueFb.doc(window.cueDb, "scripts", currentScript.id);
     await window.cueFb.setDoc(ref, {
       title: currentScript.title,
       roles: D.roles,
       scenes: D.scenes,
       roleVoices: D.roleVoices || {},
-      secretKey: window.cueSecretKey || ""
+      secretKey: key
     });
   }
 
@@ -676,7 +765,11 @@ window.cueVoiceForRole = function (role) {
       await persistScriptToFirebase();
       $('edit-status').textContent = '✓ Repliek opgeslagen in Firebase.';
     } catch (e) {
-      $('edit-status').textContent = 'Fout bij opslaan: ' + e.message;
+      if (e.message && (e.message.includes('permission') || e.message.includes('insufficient'))) {
+        $('edit-status').textContent = 'Fout bij opslaan: Onjuist Firebase wachtwoord. Controleer dit onder Instellingen.';
+      } else {
+        $('edit-status').textContent = 'Fout bij opslaan: ' + e.message;
+      }
     }
     if (practicing) render(); else readScene();
     return true;
@@ -709,7 +802,11 @@ window.cueVoiceForRole = function (role) {
       await persistScriptToFirebase();
       $('edit-status').textContent = '✓ Repliek verwijderd en gesynchroniseerd.';
     } catch(e) {
-      $('edit-status').textContent = 'Fout bij verwijderen: ' + e.message;
+      if (e.message && (e.message.includes('permission') || e.message.includes('insufficient'))) {
+        $('edit-status').textContent = 'Fout bij verwijderen: Onjuist Firebase wachtwoord. Controleer dit onder Instellingen.';
+      } else {
+        $('edit-status').textContent = 'Fout bij verwijderen: ' + e.message;
+      }
     }
   };
 
@@ -727,7 +824,11 @@ window.cueVoiceForRole = function (role) {
       await persistScriptToFirebase();
       $('edit-status').textContent = '✓ Repliek hersteld in database.';
     } catch(e) {
-      $('edit-status').textContent = 'Fout bij herstellen: ' + e.message;
+      if (e.message && (e.message.includes('permission') || e.message.includes('insufficient'))) {
+        $('edit-status').textContent = 'Fout bij herstellen: Onjuist Firebase wachtwoord. Controleer dit onder Instellingen.';
+      } else {
+        $('edit-status').textContent = 'Fout bij herstellen: ' + e.message;
+      }
     }
   };
 
@@ -957,6 +1058,14 @@ window.cuePdfText = async function (buffer) {
 
   $('import-add').onclick = async () => {
     if (!candidate) return;
+    const key = window.cueSecretKey || localStorage.getItem('cue_firebase_secret_key') || "";
+    if (!key) {
+      if (typeof window.showFirebaseSecretModal === 'function') {
+        window.showFirebaseSecretModal();
+      }
+      $('import-status').textContent = 'Voer eerst het Firebase wachtwoord in via de popup of onder Instellingen.';
+      return;
+    }
     $('import-status').textContent = 'Script wegschrijven naar Firebase...';
     try {
       const ref = window.cueFb.doc(window.cueDb, "scripts", candidate.id);
@@ -965,7 +1074,7 @@ window.cuePdfText = async function (buffer) {
         roles: candidate.data.roles,
         scenes: candidate.data.scenes,
         roleVoices: candidate.data.roleVoices || {},
-        secretKey: window.cueSecretKey || ""
+        secretKey: key
       });
       
       const existingIdx = CUE_LIBRARY.scripts.findIndex(s => s.id === candidate.id);
@@ -981,7 +1090,11 @@ window.cuePdfText = async function (buffer) {
       invalidate();
       $('import-status').textContent = '✓ Script succesvol toegevoegd en opgeslagen in Firebase.';
     } catch (err) {
-      $('import-status').textContent = 'Fout bij opslaan in Firebase: ' + err.message;
+      if (err.message && (err.message.includes('permission') || err.message.includes('insufficient'))) {
+        $('import-status').textContent = 'Fout bij opslaan in Firebase: Onjuist Firebase wachtwoord. Controleer dit onder Instellingen.';
+      } else {
+        $('import-status').textContent = 'Fout bij opslaan in Firebase: ' + err.message;
+      }
     }
   };
 
@@ -1008,10 +1121,56 @@ document.addEventListener('DOMContentLoaded',()=>{
  const options=document.getElementById('v5-panel');
  const nodes=[...main.children];nodes.forEach(n=>{if(n===library||n===editor||n===options)return;practice.appendChild(n)});
  const heading=document.createElement('div');heading.className='practice-heading';heading.innerHTML='<p class="eyebrow">LEER JE TEKST. SPEEL JE ROL.</p><h1>Oefenen</h1>';practice.prepend(heading);
- settings.innerHTML='<h1>Instellingen en scripts</h1><p class="subtitle">Pas je oefening aan of werk je toneeltekst bij.</p>';settings.append(options,editor);
+
+ const fbSection = document.createElement('div');
+ fbSection.className = 'speech-panel';
+ fbSection.id = 'cue-firebase-settings-panel';
+ fbSection.innerHTML = `
+   <h3 style="margin-top:0">🔑 Firebase Beveiliging</h3>
+   <p class="subtitle" style="font-size:14px;margin-bottom:12px;line-height:1.5">
+     Dit wachtwoord (de <code>secretKey</code>) is vereist om toneelstukken, spelers, stemmen en wijzigingen op te slaan in Firebase.
+   </p>
+   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+     <div style="position:relative;flex:1;min-width:220px">
+       <input type="password" id="cue-settings-fb-key" placeholder="Firebase secretKey" style="width:100%;box-sizing:border-box;padding:12px 42px 12px 12px;border-radius:10px;border:1px solid var(--border);background:#102b40;color:var(--text);font:inherit">
+       <button type="button" id="cue-settings-fb-toggle" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;font-size:16px;min-height:auto;padding:4px" title="Wachtwoord tonen/verbergen">👁️</button>
+     </div>
+     <button type="button" id="cue-settings-fb-save" class="primary" style="min-height:44px;padding:8px 20px">Opslaan</button>
+   </div>
+   <p id="cue-settings-fb-status" style="font-size:13px;margin:10px 0 0 0" aria-live="polite"></p>
+ `;
+
+ const sInput = fbSection.querySelector('#cue-settings-fb-key');
+ const sToggle = fbSection.querySelector('#cue-settings-fb-toggle');
+ const sSave = fbSection.querySelector('#cue-settings-fb-save');
+ const sStatus = fbSection.querySelector('#cue-settings-fb-status');
+
+ sInput.value = window.cueSecretKey || localStorage.getItem('cue_firebase_secret_key') || '';
+ sToggle.onclick = () => { sInput.type = sInput.type === 'password' ? 'text' : 'password'; };
+ sSave.onclick = () => {
+   const val = sInput.value.trim();
+   localStorage.setItem('cue_firebase_secret_key', val);
+   sessionStorage.setItem('cue_secret_key', val);
+   window.cueSecretKey = val;
+   const pInput = document.getElementById('cue-fb-popup-input');
+   if (pInput) pInput.value = val;
+   sStatus.style.color = 'var(--green)';
+   sStatus.textContent = val ? '✓ Firebase wachtwoord opgeslagen.' : '✓ Firebase wachtwoord leeggemaakt.';
+   setTimeout(() => { sStatus.textContent = ''; }, 4000);
+ };
+
+ settings.innerHTML='<h1>Instellingen en scripts</h1><p class="subtitle">Pas je oefening aan of werk je toneeltekst bij.</p>';
+ settings.append(fbSection, options, editor);
  home.appendChild(library);main.replaceChildren(home,practice,settings);
  const nav=document.createElement('nav');nav.className='cue-nav';nav.setAttribute('aria-label','Hoofdnavigatie');nav.innerHTML='<button data-view="cue-home">⌂ &nbsp; Mijn stukken</button><button data-view="cue-practice">▷ &nbsp; Oefenen</button><button data-view="cue-settings">⚙ &nbsp; Instellingen</button>';document.body.appendChild(nav);
- function show(id){[home,practice,settings].forEach(n=>n.hidden=n.id!==id);nav.querySelectorAll('button').forEach(b=>{if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});window.scrollTo(0,0)}
+ function show(id){
+   if(id==='cue-settings' && sInput){
+     sInput.value = window.cueSecretKey || localStorage.getItem('cue_firebase_secret_key') || '';
+   }
+   [home,practice,settings].forEach(n=>n.hidden=n.id!==id);
+   nav.querySelectorAll('button').forEach(b=>{if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+   window.scrollTo(0,0)
+ }
  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>show(b.dataset.view));
  function tiles(){const list=document.getElementById('cue-play-list');list.replaceChildren();CUE_LIBRARY.scripts.forEach((script,i)=>{const b=document.createElement('button');b.className='play-tile';b.innerHTML='<div class="play-icon" aria-hidden="true">🎭</div><strong>'+esc(script.title)+'</strong><span>'+script.data.scenes.length+' scènes · '+script.data.roles.length+' rollen</span><em>Kies je rol en begin →</em>';b.onclick=()=>{const choice=document.getElementById('script-choice');choice.value=String(i);choice.dispatchEvent(new Event('change'));show('cue-practice')};list.appendChild(b)})}
  document.getElementById('cue-add-play').onclick=()=>{library.querySelector('details').open=true;library.scrollIntoView({behavior:'smooth'});document.getElementById('import-title').focus()};
