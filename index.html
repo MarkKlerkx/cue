@@ -1,6 +1,47 @@
 <!doctype html>
 <html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Cue! – Toneeltekst Leerapp</title>
+<script>
+const APP_BUILD_ID = "v5.20261023.1245";
+
+// Voorkom caching vanuit back-forward cache en schoont browser caches op
+window.addEventListener('pageshow', function (e) {
+  if (e.persisted) window.location.reload();
+});
+if ('caches' in window) {
+  caches.keys().then(function (names) {
+    names.forEach(function (name) { caches.delete(name); });
+  });
+}
+
+// Handmatig hard verversen om alle cachelagen te omzeilen
+window.cueHardRefresh = function() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('v', Date.now().toString());
+  window.location.replace(url.toString());
+};
+
+// Automatische achtergrondcontrole op nieuwere versie op de server
+(function () {
+  try {
+    if (window.location.protocol !== 'file:') {
+      fetch(window.location.pathname + '?check=' + Date.now(), { cache: 'no-store' })
+        .then(function(res) { return res.text(); })
+        .then(function(html) {
+          const match = html.match(/const APP_BUILD_ID\s*=\s*["']([^"']+)["']/);
+          if (match && match[1] && match[1] !== APP_BUILD_ID) {
+            console.log('Nieuwere versie gevonden op server, pagina vernieuwen...');
+            window.location.replace(window.location.pathname + '?v=' + Date.now());
+          }
+        })
+        .catch(function() {});
+    }
+  } catch(e) {}
+})();
+</script>
 <!-- PDF.js van Mozilla voor directe PDF-tekstextractie -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
@@ -43,7 +84,7 @@ details{border:1px solid var(--border);background:var(--panel);border-radius:16p
 @media(max-width:650px){header{padding:24px 18px 12px}main{padding:12px 18px}.play-list{grid-template-columns:1fr;gap:12px}.play-tile{min-height:130px;padding:18px}.play-tile strong{font-size:22px;margin-top:10px}.toolbar button{flex:1 1 42%;font-size:14px}.card div{font-size:17px}.cue-nav button{width:33%}h1{font-size:25px}.grid{grid-template-columns:1fr}#role-voice-settings select{width:100%}}
 </style>
 </head>
-<body><div style="text-align:center;padding:7px;background:#eef2f7;border-bottom:1px solid #d8dee8;font-weight:800">Cue! · LEERAPP · VERSIE 5</div><header><b>Cue! – Toneeltekst Leerapp</b><div>Met de gesproken teksten van alle tegenspelers</div></header>
+<body><div style="text-align:center;padding:7px;background:#071a29;border-bottom:1px solid var(--border);font-weight:800;display:flex;justify-content:center;align-items:center;gap:12px;font-size:12px;letter-spacing:1px"><span>Cue! · LEERAPP · VERSIE 5</span><button type="button" onclick="window.cueHardRefresh()" style="min-height:auto;padding:3px 10px;font-size:11px;border-radius:8px;background:#102b40;color:var(--yellow);border:1px solid var(--border);cursor:pointer" title="Haal de nieuwste versie op van de server">🔄 Ververs app</button></div><header><b>Cue! – Toneeltekst Leerapp</b><div>Met de gesproken teksten van alle tegenspelers</div></header>
 
 <div id="cue-auth-modal">
   <div id="cue-auth-box">
@@ -1204,6 +1245,15 @@ document.addEventListener('DOMContentLoaded',()=>{
          <button type="button" id="cue-cfg-reset" style="padding:8px 16px;background:#17384c">Herstel standaarden</button>
        </div>
        <p id="cue-cfg-status" style="font-size:13px;margin:10px 0 0 0" aria-live="polite"></p>
+     </div>
+
+     <!-- 4. Versie & Cachebeheer -->
+     <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+       <div>
+         <h3 style="margin:0 0 4px 0;font-size:15px">🔄 Versie & Cachebeheer</h3>
+         <p class="subtitle" style="font-size:12px;margin:0">Actieve build: <code>v5.20261023.1245</code></p>
+       </div>
+       <button type="button" onclick="window.cueHardRefresh()" style="min-height:auto;padding:8px 16px;background:#17384c;border-color:var(--border);font-size:13px">Geforceerd verversen (cache omzeilen)</button>
      </div>
    </div>
  `;
