@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cue! – Toneeltekst Leerapp</title>
+<style>
+body{margin:0;background:#f3f4f6;font-family:system-ui,sans-serif;color:#111}
+header{background:#20242a;color:#fff;padding:18px} main{max-width:950px;margin:auto;padding:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px} select,button{padding:11px;border-radius:10px;border:1px solid #bbb;background:#fff;font:inherit}
+button{cursor:pointer} .primary{background:#20242a;color:#fff} .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.card{background:#fff;margin:10px 0;padding:14px;border-radius:14px;box-shadow:0 1px 5px #0001;line-height:1.55}
+.mine{border-left:5px solid #20242a} .cue{background:#fff} .blur{filter:blur(8px);user-select:none}
+small{color:#666} .progress{height:8px;background:#ddd;border-radius:9px;overflow:hidden} #bar{height:100%;background:#20242a;width:0}
+.note{padding:10px;background:#fff8d8;border-radius:10px;font-size:13px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<style id="v5-styles">
+.v5-panel{background:#f4f6fa;border:1px solid #d9e0e8;border-radius:14px;padding:14px;margin:14px 0;color:#202938}
+.v5-title{font-weight:800;font-size:1.08rem;margin-bottom:9px}
+.v5-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.v5-button{border:1px solid #cbd5e1;border-radius:9px;padding:9px 12px;background:#fff;color:#202938;cursor:pointer;font:inherit}
+.v5-button.selected{background:#263449;color:#fff;border-color:#263449}
+.v5-help{font-size:.88rem;color:#64748b;margin-top:8px}
+.v5-direction{color:#737b87!important;font-style:italic!important;background:#f0f2f5;border-left:3px solid #aab2bf;padding:3px 8px;border-radius:4px}
+#out.cue-hide-directions .v5-direction{display:none}
+</style>
+<style id="cue-design">
+:root{color-scheme:dark;--bg:#03131f;--panel:#0b2235;--border:#26465b;--text:#edf5fc;--muted:#a5bdce;--yellow:#ffcf56;--green:#32d5ad}
+body{background:radial-gradient(ellipse at top,#143047,var(--bg) 60%);color:var(--text);font-family:system-ui,sans-serif;min-height:100vh;padding-bottom:90px}
+body>div:first-child{background:#071a29!important;border-color:var(--border)!important;color:var(--muted);font-size:11px;letter-spacing:2px}
+header{max-width:900px;margin:auto;background:transparent;padding:30px 24px 20px}header b{font-size:38px;font-style:italic;color:var(--yellow)}header div{color:var(--muted);margin-top:5px}
+main{max-width:900px;padding:16px 24px}.cue-view[hidden]{display:none!important}h1{font-size:28px;margin:10px 0}h2{font-size:20px}p{line-height:1.6}.eyebrow{font-size:12px;letter-spacing:2px;color:var(--green);font-weight:700}.subtitle{color:var(--muted)}
+button,select,input,textarea{background:#102b40;color:var(--text);border:1px solid var(--border);border-radius:12px;font:inherit}button{min-height:46px;transition:background .15s,transform .15s}button:hover{background:#1b3c54}button:active{transform:translateY(1px)}button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--green);outline-offset:3px}select{width:100%;margin-top:8px}label{color:var(--muted)}
+#start,.primary,#next,#import-add{background:var(--yellow);color:#142132;border-color:var(--yellow);font-weight:750}#start:hover,#next:hover{background:#ffe18a}.toolbar{gap:10px;margin:20px 0}.toolbar label{display:flex;align-items:center;gap:8px;font-size:13px}.toolbar select{width:auto;margin:0}.toolbar input{accent-color:var(--green)}
+.card,.speech-panel,.v5-panel{background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;border-radius:16px;padding:18px;box-shadow:none}.card{margin:14px 0}.card b{display:block;color:var(--muted);font-size:12px;letter-spacing:1px;margin-bottom:8px}.card.mine{border-left:4px solid var(--yellow)!important;background:#173348!important}.card.mine b{color:var(--yellow)}.card div{font-size:18px}.note{background:#0b2734;color:var(--muted);border:1px solid var(--border);margin:15px 0}.progress{background:#17384c;height:6px}#bar{background:var(--green)}#status{color:var(--muted);font-size:14px}small,.v5-help{color:var(--muted)!important}.speech-live{color:var(--text)!important}.speech-score{color:var(--green)}.v5-button{background:#102b40;color:var(--text);border-color:var(--border)}.v5-button.selected{background:var(--yellow);color:#142132}.v5-direction{background:#152b3b!important;color:#b4c7d4!important;border-color:#4c6a7d}.speech-panel.unsupported{background:#33291b!important}.speech-panel p{line-height:1.5}
+details{border:1px solid var(--border);background:var(--panel);border-radius:16px;padding:18px;margin:16px 0}summary{cursor:pointer;font-weight:700}details input,textarea{padding:12px!important}#role-voice-settings>div{border-color:var(--border)!important;background:transparent!important}#role-voice-settings select{width:auto}
+.play-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0}.play-tile{padding:24px;text-align:left;min-height:170px;background:linear-gradient(135deg,#17374d,#0a2031);border:1px solid var(--border)}.play-tile strong{display:block;font-size:24px;margin:18px 0 8px}.play-tile span{display:block;color:var(--muted);font-size:14px}.play-tile em{font-style:normal;color:var(--green);font-size:13px;display:block;margin-top:18px}.play-icon{font-size:26px;color:var(--yellow)}
+.cue-nav{position:fixed;bottom:0;left:0;right:0;background:#061a29f5;backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;justify-content:center;gap:8px;padding:12px 12px max(12px,env(safe-area-inset-bottom));z-index:20}.cue-nav button{border:0;background:transparent;color:var(--muted);width:140px;font-size:14px}.cue-nav button[aria-current=page]{color:var(--yellow);background:#142d3d}.back-home{margin-bottom:14px}.practice-heading{margin:0 0 20px}.grid{gap:16px}.add-play{width:100%;background:var(--yellow);color:#142132;font-weight:750}
+#cue-auth-modal{position:fixed;inset:0;background:#03131fee;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+#cue-auth-box{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:26px;max-width:380px;width:100%;box-shadow:0 8px 30px #0008;text-align:center}
+@media(max-width:650px){header{padding:24px 18px 12px}main{padding:12px 18px}.play-list{grid-template-columns:1fr;gap:12px}.play-tile{min-height:130px;padding:18px}.play-tile strong{font-size:22px;margin-top:10px}.toolbar button{flex:1 1 42%;font-size:14px}.card div{font-size:17px}.cue-nav button{width:33%}h1{font-size:25px}.grid{grid-template-columns:1fr}#role-voice-settings select{width:100%}}
+</style>
+</head>
+<body><div style="text-align:center;padding:7px;background:#eef2f7;border-bottom:1px solid #d8dee8;font-weight:800">Cue! · LEERAPP · VERSIE 5</div><header><b>Cue! – Toneeltekst Leerapp</b><div>Met de gesproken teksten van alle tegenspelers</div></header>
+
+<div id="cue-auth-modal">
+  <div id="cue-auth-box">
+    <h2 style="margin-top:0">Beveiligde toegang</h2>
+    <p class="subtitle" id="cue-auth-msg" style="font-size:14px">Voer het wachtwoord in om de app te openen.</p>
+    <input type="password" id="cue-auth-input" placeholder="Wachtwoord" style="width:100%;box-sizing:border-box;padding:12px;margin-bottom:12px">
+    <button id="cue-auth-submit" class="primary" style="width:100%">Inloggen</button>
+  </div>
+</div>
+
+<main>
+<div class="note">Bij oefenen wordt de volledige gesproken tekst van de tegenspelers vóór jouw repliek getoond. Alleen jouw eigen repliek wordt verborgen.</div>
+<div class="grid">
+<label>Mijn rol<br><select id="role"></select></label>
+<label>Scène<br><select id="scene"></select></label>
+</div>
+<div class="toolbar">
+<button id="read" class="primary">Lees hele scène</button>
+<button id="start">Start oefenen</button>
+<button id="prev">← Vorige repliek</button>
+<button id="reveal">Toon mijn tekst</button>
+<button id="next">Volgende repliek →</button>
+</div>
+<div class="progress"><div id="bar"></div></div><p id="status"></p><section id="out"></section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+  getFirestore, collection, getDocs, doc, getDoc, setDoc 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA0pmmN4yQzzyJjFUi6BVyz4z1g7yPMogM",
+  authDomain: "cue-text-7633c.firebaseapp.com",
+  projectId: "cue-text-7633c",
+  storageBucket: "cue-text-7633c.firebasestorage.app",
+  messagingSenderId: "661898197501",
+  appId: "1:661898197501:web:133d1a497d7b9eb839c194"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+window.cueDb = db;
+window.cueFb = { collection, getDocs, doc, getDoc, setDoc };
+
+// SHA-256 Hash helper
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifyAuth(enteredPassword) {
+  const inputHash = await sha256(enteredPassword);
+  const authDocRef = doc(db, "_security", "auth");
+  const authDoc = await getDoc(authDocRef);
+
+  if (!authDoc.exists()) {
+    // Eerste keer: sla het ingevoerde wachtwoord direct op als gehashte standaard
+    await setDoc(authDocRef, { passwordHash: inputHash });
+    sessionStorage.setItem("cue_auth", "true");
+    return true;
+  }
+
+  if (authDoc.data().passwordHash === inputHash) {
+    sessionStorage.setItem("cue_auth", "true");
+    return true;
+  }
+  return false;
+}
+
+const authModal = document.getElementById('cue-auth-modal');
+const authInput = document.getElementById('cue-auth-input');
+const authSubmit = document.getElementById('cue-auth-submit');
+const authMsg = document.getElementById('cue-auth-msg');
+
+async function handleLogin() {
+  const val = authInput.value.trim();
+  if (!val) return;
+  authSubmit.disabled = true;
+  authSubmit.textContent = "Controleren...";
+  try {
+    const ok = await verifyAuth(val);
+    if (ok) {
+      authModal.style.display = 'none';
+      window.dispatchEvent(new Event('cue-auth-success'));
+    } else {
+      authMsg.textContent = "Onjuist wachtwoord. Probeer opnieuw.";
+      authMsg.style.color = "#ff6b6b";
+    }
+  } catch (e) {
+    authMsg.textContent = "Fout bij inloggen: " + e.message;
+    authMsg.style.color = "#ff6b6b";
+  }
+  authSubmit.disabled = false;
+  authSubmit.textContent = "Inloggen";
+}
+
+authSubmit.onclick = handleLogin;
+authInput.onkeydown = e => { if (e.key === 'Enter') handleLogin(); };
+
+if (sessionStorage.getItem("cue_auth") === "true") {
+  authModal.style.display = 'none';
+  setTimeout(() => window.dispatchEvent(new Event('cue-auth-success')), 50);
+}
+</script>
+
+<script>
+let CUE_LIBRARY = { scripts: [] };
+let D = { roles: [], scenes: [] };
+let currentScriptIndex = 0;
+
+let si=0,pos=0,practicing=false,revealed=false;
+const $=x=>document.getElementById(x);
+function esc(s){return s ? s.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])) : ''}
+function formatRepliek(text){
+ let result='', plain='', direction='', depth=0;
+ for(const character of (text || '')){
+  if(character==='('){
+   if(depth===0){result+=esc(plain);plain='';}
+   depth++;direction+=character;
+  }else if(character===')'&&depth>0){
+   direction+=character;depth--;
+   if(depth===0){result+=`<span class="v5-direction">${esc(direction)}</span>`;direction='';}
+  }else if(depth>0){direction+=character;}
+  else{plain+=character;}
+ }
+ return result+esc(plain+direction);
+}
+function cs(){return D.scenes[si]?.cards||[]}
+function isMine(c){return c.role===$('role').value}
+
+function resetSelectors() {
+  $('role').innerHTML = '';
+  $('scene').innerHTML = '';
+  D.roles.forEach(r=>$('role').add(new Option(r,r)));
+  D.scenes.forEach((s,i)=>$('scene').add(new Option(s.title,i)));
+  $('role').selectedIndex = 0;
+  $('scene').selectedIndex = 0;
+}
+
+function readScene(){
+ practicing=false; revealed=false;
+ $('out').innerHTML=cs().map(c=>`<article class="card ${isMine(c)?'mine':''}">
+ <b>${esc(c.role)}</b><div>${formatRepliek(c.text)}</div></article>`).join('');
+ $('bar').style.width='0%'; $('status').textContent=$('scene').selectedOptions[0]?.text||'';
+}
+function start(){
+ let i=cs().findIndex(isMine);
+ if(i<0){$('out').innerHTML='<article class="card">Deze rol heeft geen repliek in deze scène.</article>';return}
+ practicing=true; pos=i; revealed=false; render();
+}
+function render(){
+ let a=cs(); if(!a[pos])return;
+ let h='';
+ for(let i=0;i<pos;i++) {
+   let c=a[i];
+   h+=`<article class="card cue"><b>${esc(c.role)}</b><div>${formatRepliek(c.text)}</div></article>`;
+ }
+ let c=a[pos];
+ h+=`<article class="card mine"><b>${esc(c.role)} — MIJN TEKST</b>
+ <div class="${revealed?'':'blur'}">${formatRepliek(c.text)}</div>
+ <small>${revealed?'':'Zeg je repliek uit het hoofd en toon daarna de tekst ter controle.'}</small></article>`;
+ $('out').innerHTML=h;
+ $('bar').style.width=((pos+1)/a.length*100)+'%';
+}
+function next(){
+ if(!practicing)return; let a=cs(),i=pos+1;
+ while(i<a.length&&!isMine(a[i]))i++;
+ if(i<a.length){pos=i;revealed=false;render()}else $('status').textContent='Alle replieken van jouw rol in deze scène zijn geoefend.';
+}
+function prev(){
+ if(!practicing)return; let a=cs(),i=pos-1;
+ while(i>=0&&!isMine(a[i]))i--;
+ if(i>=0){pos=i;revealed=false;render()}
+}
+$('read').onclick=readScene;$('start').onclick=start;$('next').onclick=next;$('prev').onclick=prev;
+$('reveal').onclick=()=>{if(practicing){revealed=true;render()}};
+$('role').onchange=()=>practicing?start():readScene();
+$('scene').onchange=()=>{si=+$('scene').value;readScene()};
+
+// Toneelstukken inladen via Firebase Firestore
+window.addEventListener('cue-auth-success', async () => {
+  $('status').textContent = 'Toneelstukken laden uit cloud...';
+  try {
+    const colRef = window.cueFb.collection(window.cueDb, "scripts");
+    const snap = await window.cueFb.getDocs(colRef);
+    CUE_LIBRARY.scripts = [];
+    snap.forEach(d => {
+      const data = d.data();
+      CUE_LIBRARY.scripts.push({ id: d.id, title: data.title, data: data });
+    });
+
+    if (CUE_LIBRARY.scripts.length > 0) {
+      currentScriptIndex = 0;
+      D = CUE_LIBRARY.scripts[0].data;
+      resetSelectors();
+      readScene();
+      window.dispatchEvent(new Event('cue-script-changed'));
+      $('status').textContent = '';
+    } else {
+      $('status').textContent = 'Nog geen toneelstukken in database. Voeg er een toe via het menu.';
+    }
+  } catch (err) {
+    $('status').textContent = 'Fout bij laden van toneelstukken: ' + err.message;
+  }
+});
+</script>
+
+<script id="speech-practice-script">
+(function () {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let listening = false;
+  let restartTimer = null;
+  let advanceTimer = null;
+  let finalTranscript = '';
+
+  const style = document.createElement('style');
+  style.textContent = '.speech-panel{margin:10px 0;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc}.speech-panel p{margin:6px 0}.speech-panel .speech-live{min-height:1.4em;color:#334155}.speech-panel .speech-score{font-weight:700}.speech-panel.unsupported{background:#fff7ed;border-color:#fed7aa}';
+  document.head.appendChild(style);
+
+  const toolbar = $('read').parentElement;
+  const listenButton = document.createElement('button');
+  listenButton.id = 'listen';
+  listenButton.type = 'button';
+  listenButton.textContent = '🎙️ Start spraakoefening';
+  listenButton.disabled = !SpeechRecognition;
+  toolbar.insertBefore(listenButton, $('reveal'));
+  const autoLabel = document.createElement('label');
+  autoLabel.innerHTML = '<input type="checkbox" id="auto-cues"> Automatisch tegenspelers voorlezen';
+  toolbar.appendChild(autoLabel);
+  const toleranceLabel = document.createElement('label');
+  toleranceLabel.innerHTML = 'Herkenning: <select id="speech-tolerance"><option value="0.5">Heel soepel (50%)</option><option value="0.6" selected>Soepel (60%)</option><option value="0.75">Normaal (75%)</option><option value="0.85">Streng (85%)</option></select>';
+  toolbar.appendChild(toleranceLabel);
+  const tolerance = toleranceLabel.querySelector('select');
+  try {
+    const saved = localStorage.getItem('cue-speech-tolerance');
+    if (Array.from(tolerance.options).some(option => option.value === saved)) tolerance.value = saved;
+  } catch (_) {}
+  tolerance.onchange = () => {
+    clearTimeout(advanceTimer);
+    try { localStorage.setItem('cue-speech-tolerance', tolerance.value); } catch (_) {}
+    updateScore();
+  };
+  const doneButton = document.createElement('button');
+  doneButton.textContent = '✓ Ik ben klaar';
+  doneButton.type = 'button';
+  doneButton.disabled = !SpeechRecognition;
+  toolbar.appendChild(doneButton);
+  doneButton.onclick = () => {
+    if (!listening) return;
+    finishTurn();
+  };
+  const autoCues = autoLabel.querySelector('input');
+  autoCues.disabled = !SpeechRecognition || !('speechSynthesis' in window);
+  autoCues.onchange = () => { clearTimeout(advanceTimer); };
+  window.addEventListener('cue-reading-finished', () => {
+    if (autoCues.checked && practicing && !listening) startListening();
+  });
+
+  const panel = document.createElement('section');
+  panel.id = 'speech-panel';
+  panel.className = 'speech-panel' + (SpeechRecognition ? '' : ' unsupported');
+  panel.innerHTML = SpeechRecognition
+    ? '<strong>Spraakoefening</strong><p id="speech-help">Start de oefening, zeg je verborgen repliek en vergelijk daarna de tekst.</p><p class="speech-live" id="speech-live" aria-live="polite"></p><p class="speech-score" id="speech-score"></p>'
+    : '<strong>Spraakoefening niet beschikbaar</strong><p>Deze browser ondersteunt geen spraakherkenning. Open de app in een recente versie van Chrome of Edge.</p>';
+  $('out').before(panel);
+
+  const live = () => $('speech-live');
+  const score = () => $('speech-score');
+  const help = () => $('speech-help');
+  const normalise = text => text
+    .replace(/\([^)]*\)/g, ' ')
+    .toLocaleLowerCase('nl-NL')
+    .replace(/[^\p{L}\p{N}'’\s]/gu, ' ')
+    .replace(/\s+/g, ' ').trim();
+  const words = text => normalise(text).split(' ').filter(Boolean);
+  const lcsLength = (expected, spoken) => {
+    let previous = new Uint16Array(spoken.length + 1);
+    for (const expectedWord of expected) {
+      const current = new Uint16Array(spoken.length + 1);
+      for (let column = 1; column <= spoken.length; column++) {
+        current[column] = expectedWord === spoken[column - 1]
+          ? previous[column - 1] + 1
+          : Math.max(previous[column], current[column - 1]);
+      }
+      previous = current;
+    }
+    return previous[spoken.length];
+  };
+  const updateScore = () => {
+    if (!practicing || !cs()[pos]) return;
+    const expected = words(cs()[pos].text);
+    const spoken = words(finalTranscript);
+    if (!spoken.length) { score().textContent = ''; return; }
+    const percentage = expected.length ? Math.round((lcsLength(expected, spoken) / expected.length) * 100) : 0;
+    score().textContent = `Woordovereenkomst met je repliek: ${percentage}%. ${percentage >= Number(tolerance.value) * 100 ? 'Voldoende voor de gekozen herkenningsmarge.' : 'Nog onder de gekozen marge. Anders verwoord? Tik op “Ik ben klaar”.'}`;
+  };
+  const resetFeedback = () => {
+    finalTranscript = '';
+    if (live()) live().textContent = '';
+    if (score()) score().textContent = '';
+    if (help()) help().textContent = 'Zeg je verborgen repliek. De herkenning vergelijkt alleen gesproken woorden; regieaanwijzingen tellen niet mee.';
+  };
+  const stopListening = () => {
+    listening = false;
+    clearTimeout(advanceTimer);
+    clearTimeout(restartTimer);
+    restartTimer = null;
+    if (recognition) recognition.stop();
+    if (SpeechRecognition) listenButton.textContent = '🎙️ Start spraakoefening';
+  };
+  const startListening = () => {
+    if (!practicing) { $('status').textContent = 'Kies eerst “Start oefenen” om een repliek te oefenen.'; return; }
+    resetFeedback();
+    recognition = new SpeechRecognition();
+    const session = recognition;
+    recognition.lang = 'nl-NL';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = event => {
+      if (recognition !== session) return;
+      let interim = '';
+      for (let index = event.resultIndex; index < event.results.length; index++) {
+        const text = event.results[index][0].transcript;
+        if (event.results[index].isFinal) finalTranscript += `${text} `;
+        else interim += text;
+      }
+      live().textContent = `Herkenning: ${(finalTranscript + interim).trim()}`;
+      updateScore();
+      clearTimeout(advanceTimer);
+      const expected = words(cs()[pos].text);
+      const spoken = words(finalTranscript);
+      const enoughWords = spoken.length >= Math.ceil(expected.length * 0.75);
+      if (autoCues.checked && listening && !interim && expected.length && enoughWords && lcsLength(expected, spoken) / expected.length >= Number(tolerance.value)) {
+        advanceTimer = setTimeout(() => {
+          if (!autoCues.checked || !listening || recognition !== session) return;
+          finishTurn();
+        }, 2500);
+      }
+    };
+    recognition.onerror = event => {
+      if (recognition !== session || !listening) return;
+      if (event.error === 'no-speech' || event.error === 'aborted') return;
+      listening = false;
+      clearTimeout(advanceTimer);
+      clearTimeout(restartTimer);
+      listenButton.textContent = '🎙️ Start spraakoefening';
+      const messages = { 'not-allowed': 'Microfoontoegang is niet toegestaan. Sta deze toe in de browser en probeer opnieuw.', 'no-speech': 'Geen spraak gehoord. Probeer het opnieuw.', 'network': 'Spraakherkenning heeft een netwerkverbinding nodig.' };
+      help().textContent = messages[event.error] || `Spraakherkenning kon niet starten (${event.error}).`;
+    };
+    recognition.onend = () => {
+      if (recognition !== session) return;
+      updateScore();
+      if (!listening) return;
+      help().textContent = 'Luisteren wordt hervat… je herkende tekst blijft bewaard.';
+      restartTimer = setTimeout(() => {
+        if (!listening || recognition !== session) return;
+        try {
+          session.start();
+          help().textContent = 'Luisteren… neem gerust een pauze. Klik op stop wanneer je klaar bent.';
+        } catch (_) {
+          listening = false;
+          listenButton.textContent = '🎙️ Start spraakoefening';
+          help().textContent = 'Het luisteren kon niet worden hervat. Je herkende tekst blijft staan. Start opnieuw om nog eens te oefenen.';
+        }
+      }, 300);
+    };
+    try {
+      recognition.start();
+      listening = true;
+      listenButton.textContent = '■ Stop spraakoefening';
+      help().textContent = 'Luisteren… kleine tekstafwijkingen mogen. Bij voldoende herkenning gaat Cue! na een pauze verder. Anders kun je op “Ik ben klaar” tikken.';
+    } catch (_) { help().textContent = 'De microfoon start al. Klik op stop en probeer opnieuw.'; }
+  };
+  listenButton.onclick = () => listening ? stopListening() : startListening();
+  function finishTurn() {
+    stopListening();
+    updateScore();
+    if (!autoCues.checked) return;
+    const previousPosition = pos;
+    next();
+    if (pos !== previousPosition) $('speak-cues').click();
+  }
+
+  const originalRender = render;
+  render = function () { stopListening(); originalRender(); resetFeedback(); };
+  const originalReadScene = readScene;
+  readScene = function () { stopListening(); originalReadScene(); resetFeedback(); };
+})();
+</script>
+
+<script id="role-voices-script">
+window.cueVoiceForRole = function (role) {
+  const setting = D.roleVoices?.[role] || {};
+  const voices = window.speechSynthesis.getVoices().filter(v => /^nl(?:[-_]|$)/i.test(v.lang));
+  const explicit = voices.find(v => v.name === setting.voice);
+  const male = /\b(frank|ruben|xander|maarten|arthur|male|man)\b/i;
+  const female = /\b(colette|femke|lotte|claire|ellen|saskia|laura|female|vrouw)\b/i;
+  const matched = setting.gender === 'male' ? voices.find(v => male.test(v.name))
+    : setting.gender === 'female' ? voices.find(v => female.test(v.name)) : null;
+  return { voice: explicit || matched || voices[0], fallback: !!setting.gender && !explicit && !matched,
+    pitch: setting.gender === 'male' ? 0.85 : setting.gender === 'female' ? 1.15 : 1 };
+};
+</script>
+
+<script id="cue-read-aloud">
+(function () {
+  const supported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  const button = document.createElement('button');
+  button.id = 'speak-cues';
+  button.textContent = '🔊 Lees tegenspelers voor';
+  button.disabled = !supported;
+  $('read').parentElement.appendChild(button);
+  let generation = 0;
+  let speaking = false;
+  function stop() {
+    generation++;
+    speaking = false;
+    if (supported) window.speechSynthesis.cancel();
+    button.textContent = '🔊 Lees tegenspelers voor';
+  }
+  button.onclick = () => {
+    if (speaking) { stop(); return; }
+    const cards = cs();
+    let from = 0;
+    if (practicing) {
+      for (let i = pos - 1; i >= 0; i--) {
+        if (isMine(cards[i])) { from = i + 1; break; }
+      }
+    }
+    const lines = cards.slice(from, practicing ? pos : cards.length)
+      .filter(card => !isMine(card))
+      .map(card => ({ role: card.role, text: card.text.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim() }))
+      .filter(card => /[\p{L}\p{N}]/u.test(card.text));
+    if (!lines.length) {
+      $('status').textContent = 'Hier zijn geen replieken van tegenspelers om voor te lezen.';
+      window.dispatchEvent(new Event('cue-reading-finished'));
+      return;
+    }
+    const listen = $('listen');
+    if (listen && listen.textContent.startsWith('■')) listen.click();
+    stop();
+    speaking = true;
+    button.textContent = '■ Stop voorlezen';
+    const token = generation;
+    function speak(index) {
+      if (token !== generation) return;
+      if (index >= lines.length) {
+        stop();
+        $('status').textContent = practicing ? 'Jij bent aan de beurt. Zeg je repliek of start de spraakoefening.' : 'Voorlezen klaar.';
+        window.dispatchEvent(new Event('cue-reading-finished'));
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(lines[index].text);
+      const selection = window.cueVoiceForRole(lines[index].role);
+      utterance.lang = 'nl-NL';
+      if (selection.voice) utterance.voice = selection.voice;
+      if (selection.fallback) utterance.pitch = selection.pitch;
+      utterance.onend = () => speak(index + 1);
+      utterance.onerror = () => {
+        if (token !== generation) return;
+        stop();
+        $('status').textContent = 'Voorlezen is onderbroken. Tik opnieuw op “Lees tegenspelers voor”.';
+      };
+      window.speechSynthesis.speak(utterance);
+    }
+    speak(0);
+  };
+  const previousRender = render;
+  render = function () { stop(); previousRender(); };
+  const previousReadScene = readScene;
+  readScene = function () { stop(); previousReadScene(); };
+  $('listen').addEventListener('click', stop);
+  window.addEventListener('pagehide', stop);
+})();
+</script>
+
+<script id="text-editor-script">
+(function () {
+  const editor = document.createElement('details');
+  editor.className = 'speech-panel';
+  editor.innerHTML = '<summary><strong>✏️ Toneeltekst aanpassen</strong></summary>' +
+    '<p>Pas een repliek aan en sla deze direct op in de cloud.</p>' +
+    '<label>Scène<br><select id="edit-scene"></select></label> ' +
+    '<label>Repliek<br><select id="edit-line" style="max-width:100%"></select></label>' +
+    '<p><label>Speler<br><select id="edit-role"></select></label></p>' +
+    '<label>Tekst (regieaanwijzingen tussen haakjes)<br><textarea id="edit-text" rows="7" style="box-sizing:border-box;width:100%;padding:10px;font:inherit"></textarea></label>' +
+    '<p><button id="edit-save" type="button">Sla repliek op in Firebase</button> <button id="edit-delete" type="button">Verwijder repliek</button> <button id="edit-undo-delete" type="button" disabled>Maak verwijderen ongedaan</button></p>' +
+    '<p id="edit-status" aria-live="polite">Wijzigingen worden direct gesynchroniseerd via de database.</p>' +
+    '<h3>Stemmen per speler</h3><p>Kies man of vrouw en beluister het voorbeeld. Je kunt ook zelf een Nederlandse stem kiezen.</p><div id="role-voice-settings"></div>';
+  document.querySelector('main').appendChild(editor);
+  const sceneSelect = $('edit-scene'), lineSelect = $('edit-line');
+  let deletedLine = null;
+  D.roleVoices = D.roleVoices || {};
+  const voiceRows = [];
+
+  function rebuildVoiceRows() {
+    voiceRows.length = 0;
+    $('role-voice-settings').innerHTML = '';
+    D.roles.forEach(role => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0';
+      const label = document.createElement('strong');
+      label.textContent = role;
+      label.style.minWidth = '110px';
+      const gender = document.createElement('select');
+      gender.setAttribute('aria-label', `Man of vrouw voor ${role}`);
+      gender.add(new Option('Standaard', ''));
+      gender.add(new Option('Man', 'male'));
+      gender.add(new Option('Vrouw', 'female'));
+      gender.value = D.roleVoices[role]?.gender || '';
+      const voice = document.createElement('select');
+      voice.style.maxWidth = '100%';
+      voice.setAttribute('aria-label', `Stem voor ${role}`);
+      const preview = document.createElement('button');
+      preview.textContent = '▶ Luister';
+      preview.type = 'button';
+      preview.disabled = !('speechSynthesis' in window);
+      async function saveSetting() {
+        D.roleVoices[role] = { gender: gender.value, voice: voice.value };
+        await persistScriptToFirebase();
+        $('edit-status').textContent = 'Stemkeuze opgeslagen in cloud.';
+      }
+      gender.onchange = () => { voice.value = ''; saveSetting(); };
+      voice.onchange = saveSetting;
+      preview.onclick = () => {
+        if ($('listen').textContent.startsWith('■')) $('listen').click();
+        if ($('speak-cues').textContent.startsWith('■')) $('speak-cues').click();
+        window.speechSynthesis.cancel();
+        const selection = window.cueVoiceForRole(role);
+        const utterance = new SpeechSynthesisUtterance(`Hallo, ik speel ${role}. Dit is mijn stem.`);
+        utterance.lang = 'nl-NL';
+        if (selection.voice) utterance.voice = selection.voice;
+        if (selection.fallback) utterance.pitch = selection.pitch;
+        window.speechSynthesis.speak(utterance);
+      };
+      row.append(label, gender, voice, preview);
+      $('role-voice-settings').appendChild(row);
+      voiceRows.push({ role, voice });
+    });
+  }
+
+  async function persistScriptToFirebase() {
+    const currentScript = CUE_LIBRARY.scripts[currentScriptIndex];
+    if (!currentScript || !window.cueDb) return;
+    const ref = window.cueFb.doc(window.cueDb, "scripts", currentScript.id);
+    await window.cueFb.setDoc(ref, {
+      title: currentScript.title,
+      roles: D.roles,
+      scenes: D.scenes,
+      roleVoices: D.roleVoices || {}
+    });
+  }
+
+  function refreshVoices() {
+    const voices = 'speechSynthesis' in window ? window.speechSynthesis.getVoices().filter(v => /^nl(?:[-_]|$)/i.test(v.lang)) : [];
+    voiceRows.forEach(({ role, voice }) => {
+      const saved = D.roleVoices[role]?.voice || '';
+      voice.innerHTML = '';
+      voice.add(new Option('Automatisch kiezen', ''));
+      voices.forEach(v => voice.add(new Option(`${v.name} (${v.lang})`, v.name)));
+      if (saved && !voices.some(v => v.name === saved)) voice.add(new Option(saved + ' (niet op dit apparaat)', saved));
+      voice.value = saved;
+    });
+  }
+  if ('speechSynthesis' in window) window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
+
+  function loadLine() {
+    const scene = D.scenes[+sceneSelect.value];
+    const card = scene ? scene.cards[+lineSelect.value] : null;
+    $('edit-save').disabled = !card;
+    $('edit-delete').disabled = !card;
+    $('edit-role').disabled = !card;
+    $('edit-text').disabled = !card;
+    if (!card) {
+      $('edit-text').value = '';
+      return;
+    }
+    $('edit-role').value = card.role;
+    $('edit-text').value = card.text;
+  }
+
+  function loadScene(selectedIndex = 0) {
+    lineSelect.innerHTML = '';
+    const scene = D.scenes[+sceneSelect.value];
+    if (scene) {
+      scene.cards.forEach((card, index) => {
+        lineSelect.add(new Option(`${index + 1}. ${card.role}: ${card.text.slice(0, 65)}`, index));
+      });
+      lineSelect.selectedIndex = Math.min(Number.isInteger(selectedIndex) ? selectedIndex : 0, lineSelect.options.length - 1);
+    }
+    loadLine();
+  }
+
+  async function saveLine() {
+    if (!$('edit-line').options.length) return false;
+    const text = $('edit-text').value.trim();
+    if (!text) { $('edit-status').textContent = 'Vul eerst een tekst in.'; return false; }
+    const card = D.scenes[+sceneSelect.value].cards[+lineSelect.value];
+    card.text = text;
+    card.role = $('edit-role').value;
+    lineSelect.selectedOptions[0].textContent = `${+lineSelect.value + 1}. ${card.role}: ${text.slice(0, 65)}`;
+    
+    $('edit-status').textContent = 'Opslaan in cloud...';
+    try {
+      await persistScriptToFirebase();
+      $('edit-status').textContent = '✓ Repliek opgeslagen in Firebase.';
+    } catch (e) {
+      $('edit-status').textContent = 'Fout bij opslaan: ' + e.message;
+    }
+    if (practicing) render(); else readScene();
+    return true;
+  }
+
+  sceneSelect.onchange = () => loadScene();
+  lineSelect.onchange = loadLine;
+  $('edit-save').onclick = saveLine;
+
+  function refreshAfterDeletion() {
+    if (si === +sceneSelect.value && practicing) {
+      practicing = false;
+      readScene();
+      $('status').textContent = 'De scène is aangepast. Tik op “Start oefenen” om opnieuw te beginnen.';
+    } else if (practicing) render(); else readScene();
+  }
+
+  $('edit-delete').onclick = async () => {
+    const sceneIndex = +sceneSelect.value;
+    const index = +lineSelect.value;
+    const cards = D.scenes[sceneIndex].cards;
+    if (!lineSelect.options.length || !cards[index]) return;
+    deletedLine = { sceneIndex, index, card: cards[index] };
+    cards.splice(index, 1);
+    $('edit-undo-delete').disabled = false;
+    loadScene(index);
+    refreshAfterDeletion();
+    $('edit-status').textContent = 'Bezig met synchroniseren...';
+    await persistScriptToFirebase();
+    $('edit-status').textContent = '✓ Repliek verwijderd en gesynchroniseerd.';
+  };
+
+  $('edit-undo-delete').onclick = async () => {
+    if (!deletedLine) return;
+    const { sceneIndex, index, card } = deletedLine;
+    D.scenes[sceneIndex].cards.splice(index, 0, card);
+    sceneSelect.value = String(sceneIndex);
+    deletedLine = null;
+    $('edit-undo-delete').disabled = true;
+    loadScene(index);
+    refreshAfterDeletion();
+    $('edit-status').textContent = 'Bezig met herstellen...';
+    await persistScriptToFirebase();
+    $('edit-status').textContent = '✓ Repliek hersteld in database.';
+  };
+
+  window.addEventListener('cue-script-changed', () => {
+    deletedLine = null;
+    $('edit-undo-delete').disabled = true;
+    sceneSelect.innerHTML = '';
+    $('edit-role').innerHTML = '';
+    D.scenes.forEach((scene, index) => sceneSelect.add(new Option(scene.title, index)));
+    D.roles.forEach(role => $('edit-role').add(new Option(role, role)));
+    rebuildVoiceRows();
+    refreshVoices();
+    loadScene();
+  });
+})();
+</script>
+
+<script id="v5-script">
+(function(){
+ function init(){
+  if(document.getElementById('v5-panel')) return;
+  const host=document.querySelector('main')||document.body;
+  const p=document.createElement('section'); p.id='v5-panel'; p.className='v5-panel';
+  p.innerHTML='<div class="v5-title">Versie 5 · Oefeninstellingen</div>'+
+   '<div class="v5-buttons">'+
+   '<button class="v5-button selected" data-mode="all">Alle cues</button>'+
+   '<button class="v5-button" data-mode="3">Laatste 3</button>'+
+   '<button class="v5-button" data-mode="1">Laatste cue</button>'+
+   '<button class="v5-button" data-mode="scene">Hele scène</button>'+
+   '<button class="v5-button" id="v5-directions">Regieaanwijzingen: aan</button></div>'+
+   '<div class="v5-help">Kies hoeveel voorafgaande replieken je wilt zien. Regieaanwijzingen tussen haakjes kun je tonen of verbergen.</div>';
+  host.insertBefore(p,host.firstChild);
+  let mode='all', showDirections=true;
+  p.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
+   mode=b.dataset.mode;p.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('selected',x===b));
+   window.dispatchEvent(new CustomEvent('v5-cue-mode',{detail:mode}));
+   applyCueMode();
+  });
+  p.querySelector('#v5-directions').onclick=()=>{
+   showDirections=!showDirections;
+   p.querySelector('#v5-directions').textContent='Regieaanwijzingen: '+(showDirections?'aan':'uit');
+   document.getElementById('out').classList.toggle('cue-hide-directions',!showDirections);
+  };
+  function applyCueMode(){
+   const cards=[...document.querySelectorAll('.line-card,.dialogue-card,.repliek,.line')];
+   if(!cards.length)return;
+   const idx=cards.findIndex(el=>el.querySelector('.hidden,.blurred,[data-hidden="true"]'));
+   if(idx<0)return;
+   cards.forEach((el,i)=>{
+    if(i>=idx){el.style.display='';return;}
+    const n=idx-i;
+    el.style.display=(mode==='all'||mode==='scene'||(mode==='3'&&n<=3)||(mode==='1'&&n<=1))?'':'none';
+   });
+  }
+  new MutationObserver(()=>{applyCueMode()}).observe(document.getElementById('out'),{childList:true,subtree:true});
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+
+<script id="script-import">
+window.cueValidateScript = function (input) {
+  if (!input || !Array.isArray(input.scenes) || !input.scenes.length) throw new Error('Het script bevat geen scènes.');
+  const roles = new Set();
+  const scenes = input.scenes.map((scene, index) => {
+    if (!Array.isArray(scene.cards)) throw new Error('Een scène heeft geen geldige repliekenlijst.');
+    const cards = scene.cards.map(card => {
+      if (!card || typeof card.role !== 'string' || typeof card.text !== 'string' || !card.role.trim() || !card.text.trim()) throw new Error('Een repliek mist een rol of tekst.');
+      roles.add(card.role.trim());
+      return { role: card.role.trim(), text: card.text.trim() };
+    });
+    return { title: String(scene.title || `Scène ${index + 1}`), cards };
+  });
+  if (!roles.size) throw new Error('Het script bevat geen gesproken replieken.');
+  return { roles: [...roles], scenes };
+};
+
+window.cueParseScriptText = function (text, title) {
+  const scenes = []; let scene = null, current = null, pending = [], skipped = [];
+  function ensureScene() { if (!scene) { scene = { title: 'Scène 1', cards: [] }; scenes.push(scene); } }
+  const lines = text.replace(/\r/g, '').split('\n');
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index].trim();
+    if (!line || /^pagina\s+\d+$/i.test(line) || /^\d+$/.test(line) || line.toLowerCase() === title.trim().toLowerCase()) continue;
+    if (/^(?:[①-⑳\d.\s-]*)sc[eè]ne\s+(?:\d+|[①-⑳])/i.test(line) || /^(?:(?:eerste|tweede|derde|vierde|vijfde|\d+)[\s]+bedrijf|akte\s+\d+)$/i.test(line)) {
+      scene = { title: line, cards: [] }; scenes.push(scene); current = null; pending = []; continue;
+    }
+    const roleMatch = line.match(/^([\p{L}\p{N}][\p{L}\p{N} .’'\-]{0,65}):\s*(.*)$/u);
+    const standalone = /^[\p{Lu}\d][\p{Lu}\d .’'\-]{1,45}$/u.test(line) && /\p{Lu}/u.test(line);
+    if (roleMatch || standalone) {
+      ensureScene();
+      const role = roleMatch ? roleMatch[1].trim() : line;
+      const spoken = roleMatch ? roleMatch[2].trim() : '';
+      current = { role, text: [...pending, spoken].filter(Boolean).join(' ') };
+      pending = []; scene.cards.push(current);
+    } else if (current) current.text += (current.text ? '\n' : '') + line;
+    else if (scene) pending.push(line.startsWith('(') ? line : `(${line})`);
+    else skipped.push({ line: index + 1, text: line });
+  }
+  const emptyCards = scenes.flatMap(s => s.cards).filter(c => !c.text.trim()).length;
+  const cleanScenes = scenes.map(s => ({ ...s, cards: s.cards.filter(c => c.text.trim()) })).filter(s => s.cards.length);
+  const data = window.cueValidateScript({ scenes: cleanScenes });
+  const counts = new Map();
+  data.scenes.forEach(s => s.cards.forEach(c => counts.set(c.role, (counts.get(c.role) || 0) + 1)));
+  const warnings = skipped.map(item => `Regel ${item.line} niet ingedeeld: ${item.text}`).concat(emptyCards ? [`${emptyCards} lege rolvermeldingen overgeslagen.`] : []);
+  for (const [role, count] of counts) if (count <= 2 || role.length > 30) warnings.push(`Controleer rolnaam “${role}” (${count} replieken); dit kan een scan- of indelingsfout zijn.`);
+  if (data.scenes.some(s => s.cards.some(c => /\b[\p{Lu}][\p{Lu} .]{2,30}:\s/u.test(c.text)))) warnings.push('Er lijken meerdere spelers in één repliek te staan. Splits die in het tekstvak op aparte regels met ROL: tekst.');
+  return { data, warnings };
+};
+
+window.cueDocxText = async function (buffer) {
+  const bytes = new Uint8Array(buffer), view = new DataView(buffer), decoder = new TextDecoder();
+  let end = bytes.length - 22;
+  while (end >= Math.max(0, bytes.length - 65557) && view.getUint32(end, true) !== 0x06054b50) end--;
+  if (end < 0 || view.getUint32(end, true) !== 0x06054b50) throw new Error('Dit is geen geldig Word-bestand.');
+  let position = view.getUint32(end + 16, true);
+  const entries = view.getUint16(end + 10, true);
+  for (let i = 0; i < entries; i++) {
+    if (view.getUint32(position, true) !== 0x02014b50) throw new Error('Word-bestand kon niet worden gelezen.');
+    const method = view.getUint16(position + 10, true), size = view.getUint32(position + 20, true);
+    const nameLength = view.getUint16(position + 28, true), extraLength = view.getUint16(position + 30, true), commentLength = view.getUint16(position + 32, true);
+    const name = decoder.decode(bytes.slice(position + 46, position + 46 + nameLength));
+    if (name === 'word/document.xml') {
+      const local = view.getUint32(position + 42, true);
+      const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
+      let xmlBytes = bytes.slice(start, start + size);
+      if (method === 8) {
+        try { xmlBytes = new Uint8Array(await new Response(new Blob([xmlBytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer()); }
+        catch (_) { throw new Error('Deze browser kan Word niet uitpakken. Open in Chrome of kopieer de Word-tekst naar het tekstvak.'); }
+      } else if (method !== 0) throw new Error('Onbekende Word-compressie. Plak de tekst uit Word.');
+      const xml = new DOMParser().parseFromString(decoder.decode(xmlBytes), 'application/xml');
+      if (xml.getElementsByTagName('parsererror').length) throw new Error('De Word-tekst is beschadigd.');
+      const ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+      return Array.from(xml.getElementsByTagNameNS(ns, 'p'), paragraph => Array.from(paragraph.getElementsByTagNameNS(ns, 't'), node => node.textContent).join('')).join('\n');
+    }
+    position += 46 + nameLength + extraLength + commentLength;
+  }
+  throw new Error('Geen tekst gevonden. Een scan moet eerst met tekstherkenning worden omgezet.');
+};
+
+(function () {
+  const host = document.querySelector('main');
+  const panel = document.createElement('section'); panel.className = 'speech-panel';
+  panel.innerHTML = '<label><strong>Toneelstuk</strong><br><select id="script-choice" style="width:100%"></select></label>' +
+    '<details style="margin-top:12px"><summary>＋ Script toevoegen aan Firebase</summary>' +
+    '<p>Importeer Word (.docx), tekst (.txt) of een Cue!-script (.json). Het stuk wordt direct per record opgeslagen in de cloud.</p>' +
+    '<label>Titel<br><input id="import-title" style="width:95%;padding:8px" placeholder="Titel van het toneelstuk"></label>' +
+    '<p><input id="import-file" type="file" accept=".docx,.txt,.json"></p>' +
+    '<label>Tekst controleren en aanpassen<br><textarea id="import-text" rows="10" style="width:100%;box-sizing:border-box;font:inherit" placeholder="Scène 1&#10;EMMA: Hallo!&#10;CHATEAU: Goedemiddag."></textarea></label>' +
+    '<p>Gebruik per repliek <b>ROL: tekst</b> en voor scènegrenzen <b>Scène 1</b>, <b>Scène 2</b>, enzovoort.</p>' +
+    '<button id="import-check">Controleer script</button><button id="import-add" disabled>Voeg gecontroleerd script toe aan Firebase</button>' +
+    '<p id="import-status" aria-live="polite"></p><pre id="import-preview" style="white-space:pre-wrap;max-height:350px;overflow:auto"></pre></details>' +
+    '<p><button id="script-json">Download gekozen script als JSON</button></p>';
+  host.insertBefore(panel, host.firstChild);
+  const choice = $('script-choice'); let candidate = null, jsonCandidate = null;
+
+  function fillChoices() {
+    choice.innerHTML = '';
+    CUE_LIBRARY.scripts.forEach((script, index) => choice.add(new Option(script.title, index)));
+    choice.selectedIndex = currentScriptIndex;
+  }
+
+  function switchScript(index) {
+    if (!CUE_LIBRARY.scripts[index]) return;
+    currentScriptIndex = index;
+    D = CUE_LIBRARY.scripts[index].data;
+    si = 0; pos = 0; practicing = false; revealed = false;
+    resetSelectors();
+    readScene();
+    window.dispatchEvent(new Event('cue-script-changed'));
+  }
+  choice.onchange = () => switchScript(+choice.value);
+
+  function invalidate() { candidate = null; $('import-add').disabled = true; }
+  $('import-title').oninput = invalidate;
+  $('import-text').oninput = () => { jsonCandidate = null; invalidate(); };
+  $('import-file').onchange = async event => {
+    const file = event.target.files[0]; if (!file) return;
+    invalidate(); jsonCandidate = null;
+    $('import-status').textContent = 'Bestand lezen…';
+    try {
+      $('import-title').value = file.name.replace(/\.(docx|txt|json)$/i, '').replace(/_/g, ' ');
+      if (/\.docx$/i.test(file.name)) $('import-text').value = await window.cueDocxText(await file.arrayBuffer());
+      else if (/\.json$/i.test(file.name)) {
+        const json = JSON.parse(await file.text());
+        jsonCandidate = window.cueValidateScript(json.data || json);
+        if (json.title) $('import-title').value = json.title;
+        $('import-text').value = jsonCandidate.scenes.map(scene => scene.title + '\n' + scene.cards.map(card => card.role + ': ' + card.text).join('\n')).join('\n\n');
+      } else $('import-text').value = await file.text();
+      $('import-status').textContent = 'Bestand ingelezen. Klik op “Controleer script” en bekijk de rollen en replieken.';
+    } catch (error) { $('import-status').textContent = error.message; }
+  };
+
+  $('import-check').onclick = () => {
+    invalidate();
+    try {
+      const title = $('import-title').value.trim();
+      if (!title) throw new Error('Vul eerst een titel in.');
+      const result = jsonCandidate ? { data: jsonCandidate, warnings: [] } : window.cueParseScriptText($('import-text').value, title);
+      const safeId = title.toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || ('script-' + Date.now());
+      candidate = { id: safeId, title, data: result.data };
+      const count = result.data.scenes.reduce((n, scene) => n + scene.cards.length, 0);
+      $('import-status').textContent = `${result.data.roles.length} rollen, ${result.data.scenes.length} scènes, ${count} replieken. Controleer de indeling hieronder.`;
+      $('import-preview').textContent = 'ROLLEN: ' + result.data.roles.join(', ') + '\n\n' + result.warnings.join('\n') + '\n\n' + result.data.scenes.map(scene => scene.title + '\n' + scene.cards.map(card => card.role + ': ' + card.text).join('\n')).join('\n\n');
+      $('import-add').disabled = false;
+    } catch (error) { $('import-status').textContent = error.message; $('import-preview').textContent = ''; }
+  };
+
+  $('import-add').onclick = async () => {
+    if (!candidate) return;
+    $('import-status').textContent = 'Script wegschrijven naar Firebase...';
+    try {
+      const ref = window.cueFb.doc(window.cueDb, "scripts", candidate.id);
+      await window.cueFb.setDoc(ref, {
+        title: candidate.title,
+        roles: candidate.data.roles,
+        scenes: candidate.data.scenes,
+        roleVoices: candidate.data.roleVoices || {}
+      });
+      
+      const existingIdx = CUE_LIBRARY.scripts.findIndex(s => s.id === candidate.id);
+      if (existingIdx >= 0) {
+        CUE_LIBRARY.scripts[existingIdx] = candidate;
+        currentScriptIndex = existingIdx;
+      } else {
+        CUE_LIBRARY.scripts.push(candidate);
+        currentScriptIndex = CUE_LIBRARY.scripts.length - 1;
+      }
+      fillChoices();
+      switchScript(currentScriptIndex);
+      invalidate();
+      $('import-status').textContent = '✓ Script succesvol toegevoegd en opgeslagen in Firebase.';
+    } catch (err) {
+      $('import-status').textContent = 'Fout bij opslaan in Firebase: ' + err.message;
+    }
+  };
+
+  $('script-json').onclick = () => {
+    const script = CUE_LIBRARY.scripts[currentScriptIndex];
+    if (!script) return;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(script, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a'); link.href = url; link.download = script.title.replace(/[^\p{L}\p{N}_-]/gu, '_') + '.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+  };
+
+  window.addEventListener('cue-script-changed', fillChoices);
+})();
+</script>
+
+<script id="cue-design-script">
+document.addEventListener('DOMContentLoaded',()=>{
+ const main=document.querySelector('main');
+ const home=document.createElement('section');home.id='cue-home';home.className='cue-view';
+ home.innerHTML='<p class="eyebrow">JOUW PODIUM. JOUW TEKST.</p><h1>Mijn toneelstukken</h1><p class="subtitle">Kies een toneelstuk, pak je rol en speel.</p><div class="play-list" id="cue-play-list"></div><button class="add-play" id="cue-add-play">＋ Nieuw toneelstuk</button>';
+ const practice=document.createElement('section');practice.id='cue-practice';practice.className='cue-view';
+ const settings=document.createElement('section');settings.id='cue-settings';settings.className='cue-view';
+ const library=document.getElementById('script-choice').closest('.speech-panel');
+ const editor=document.getElementById('edit-text').closest('details');
+ const options=document.getElementById('v5-panel');
+ const nodes=[...main.children];nodes.forEach(n=>{if(n===library||n===editor||n===options)return;practice.appendChild(n)});
+ const heading=document.createElement('div');heading.className='practice-heading';heading.innerHTML='<p class="eyebrow">LEER JE TEKST. SPEEL JE ROL.</p><h1>Oefenen</h1>';practice.prepend(heading);
+ settings.innerHTML='<h1>Instellingen en scripts</h1><p class="subtitle">Pas je oefening aan of werk je toneeltekst bij.</p>';settings.append(options,editor);
+ home.appendChild(library);main.replaceChildren(home,practice,settings);
+ const nav=document.createElement('nav');nav.className='cue-nav';nav.setAttribute('aria-label','Hoofdnavigatie');nav.innerHTML='<button data-view="cue-home">⌂ &nbsp; Mijn stukken</button><button data-view="cue-practice">▷ &nbsp; Oefenen</button><button data-view="cue-settings">⚙ &nbsp; Instellingen</button>';document.body.appendChild(nav);
+ function show(id){[home,practice,settings].forEach(n=>n.hidden=n.id!==id);nav.querySelectorAll('button').forEach(b=>{if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});window.scrollTo(0,0)}
+ nav.querySelectorAll('button').forEach(b=>b.onclick=()=>show(b.dataset.view));
+ function tiles(){const list=document.getElementById('cue-play-list');list.replaceChildren();CUE_LIBRARY.scripts.forEach((script,i)=>{const b=document.createElement('button');b.className='play-tile';b.innerHTML='<div class="play-icon" aria-hidden="true">🎭</div><strong>'+esc(script.title)+'</strong><span>'+script.data.scenes.length+' scènes · '+script.data.roles.length+' rollen</span><em>Kies je rol en begin →</em>';b.onclick=()=>{const choice=document.getElementById('script-choice');choice.value=String(i);choice.dispatchEvent(new Event('change'));show('cue-practice')};list.appendChild(b)})}
+ document.getElementById('cue-add-play').onclick=()=>{library.querySelector('details').open=true;library.scrollIntoView({behavior:'smooth'});document.getElementById('import-title').focus()};
+ window.addEventListener('cue-script-changed',tiles);tiles();show('cue-home');
+});
+</script>
+</body></html>
