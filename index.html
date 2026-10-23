@@ -1274,13 +1274,18 @@ document.addEventListener('DOMContentLoaded',()=>{
      appPwdStatus.textContent = 'Voer een nieuw inlogwachtwoord in.';
      return;
    }
+   const key = window.cueSecretKey || localStorage.getItem('cue_firebase_secret_key') || '';
+   if (!key) {
+     appPwdStatus.style.color = '#ff6b6b';
+     appPwdStatus.textContent = 'Vul eerst hieronder de Firebase Secret Key in en sla deze op.';
+     return;
+   }
    appPwdSave.disabled = true;
    appPwdStatus.style.color = 'var(--text)';
    appPwdStatus.textContent = 'Bezig met opslaan in cloud...';
 
    try {
      const hash = await window.cueSha256(val);
-     const key = window.cueSecretKey || localStorage.getItem('cue_firebase_secret_key') || '';
      const ref = window.cueFb.doc(window.cueDb, "_security", "auth");
      await window.cueFb.setDoc(ref, { passwordHash: hash, secretKey: key });
      sessionStorage.setItem("cue_auth", "true");
@@ -1290,7 +1295,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    } catch (err) {
      appPwdStatus.style.color = '#ff6b6b';
      if (err.message && (err.message.includes('permission') || err.message.includes('insufficient'))) {
-       appPwdStatus.textContent = 'Fout: Geen schrijfrechten op _security/auth. Zorg dat je Firestore security rules schrijven toestaan op _security.';
+       appPwdStatus.textContent = 'Geen schrijfrechten in Firebase. Zorg dat in de Firestore Rules staat: match /_security/{docId} { allow write: if request.resource.data.secretKey == "jouw_wachtwoord"; }';
      } else {
        appPwdStatus.textContent = 'Fout bij wijzigen: ' + err.message;
      }
