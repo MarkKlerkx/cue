@@ -5,7 +5,7 @@
 <meta http-equiv="Expires" content="0">
 <title>Cue! – Toneeltekst Leerapp</title>
 <script>
-const APP_BUILD_ID = "v5.20261023.1310";
+const APP_BUILD_ID = "v5.20261023.1315";
 
 // Voorkom caching vanuit back-forward cache en schoont browser caches op
 window.addEventListener('pageshow', function (e) {
@@ -135,7 +135,17 @@ import {
   getFirestore, collection, getDocs, doc, getDoc, setDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const DEFAULT_FIREBASE_CONFIG = {
+let loadedFileConfig = null;
+try {
+  const cfgRes = await fetch("firebase-config.json?v=" + Date.now(), { cache: "no-store" });
+  if (cfgRes.ok) {
+    loadedFileConfig = await cfgRes.json();
+  }
+} catch (e) {
+  console.warn("Kon firebase-config.json niet laden, val terug op standaardconfig:", e);
+}
+
+const DEFAULT_FIREBASE_CONFIG = loadedFileConfig || {
   apiKey: "AIzaSyA0pmmN4yQzzyJjFUi6BVyz4z1g7yPMogM",
   authDomain: "cue-text-7633c.firebaseapp.com",
   projectId: "cue-text-7633c",
@@ -1311,7 +1321,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      <div>
        <h3 style="margin:0 0 6px 0;font-size:16px">🌐 Firebase Project API Keys</h3>
        <p class="subtitle" style="font-size:13px;margin:0 0 12px 0;line-height:1.5">
-         De connectieparameters van het Firebase-project. Pas deze aan als je een eigen Firebase-project wilt koppelen. Na het opslaan herlaadt de app automatisch.
+         De connectieparameters van het Firebase-project worden automatisch geladen uit <code>firebase-config.json</code>. Pas dat bestand aan op GitHub om het voor alle gebruikers te wijzigen, of overschrijf de waarden hieronder lokaal in deze browser.
        </p>
        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
          <label style="font-size:12px;color:var(--muted)">API Key<br>
@@ -1344,7 +1354,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
        <div>
          <h3 style="margin:0 0 4px 0;font-size:15px">🔄 Versie & Cachebeheer</h3>
-         <p class="subtitle" style="font-size:12px;margin:0">Actieve build: <code>v5.20261023.1310</code></p>
+         <p class="subtitle" style="font-size:12px;margin:0">Actieve build: <code>v5.20261023.1315</code></p>
        </div>
        <button type="button" onclick="window.cueHardRefresh()" style="min-height:auto;padding:8px 16px;background:#17384c;border-color:var(--border);font-size:13px">Geforceerd verversen (cache omzeilen)</button>
      </div>
@@ -1448,11 +1458,11 @@ document.addEventListener('DOMContentLoaded',()=>{
  };
 
  cfgReset.onclick = () => {
-   if (confirm('Weet je zeker dat je de standaard Firebase API keys wilt herstellen?')) {
+   if (confirm('Weet je zeker dat je de standaard Firebase API keys wilt herstellen uit firebase-config.json?')) {
      localStorage.removeItem('cue_firebase_config');
      fillFirebaseConfigFields();
      cfgStatus.style.color = 'var(--green)';
-     cfgStatus.textContent = '✓ Standaardconfiguratie hersteld! De app wordt herladen...';
+     cfgStatus.textContent = '✓ Standaardconfiguratie hersteld uit firebase-config.json! De app wordt herladen...';
      setTimeout(() => location.reload(), 1200);
    }
  };
