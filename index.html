@@ -5,7 +5,7 @@
 <meta http-equiv="Expires" content="0">
 <title>Cue! – Toneeltekst Leerapp</title>
 <script>
-const APP_BUILD_ID = "v5.20261023.1245";
+const APP_BUILD_ID = "v5.20261023.1310";
 
 // Voorkom caching vanuit back-forward cache en schoont browser caches op
 window.addEventListener('pageshow', function (e) {
@@ -961,27 +961,94 @@ window.cueValidateScript = function (input) {
 };
 
 window.cueParseScriptText = function (text, title) {
-  const scenes = []; let scene = null, current = null, pending = [], skipped = [];
-  function ensureScene() { if (!scene) { scene = { title: 'Scène 1', cards: [] }; scenes.push(scene); } }
+  const scenes = [];
+  let scene = null, current = null, pending = [], skipped = [];
   const lines = text.replace(/\r/g, '').split('\n');
+
+  function ensureScene() {
+    if (!scene) {
+      scene = { title: 'Scène 1', cards: [] };
+      scenes.push(scene);
+    }
+  }
+
+  function cleanRole(raw) {
+    let r = raw.trim();
+    const m = r.match(/^(\d+)(?:e|de|ste)?\s*jurylid$/i);
+    if (m) return `${m[1]}e jurylid`;
+    if (/^voorzitter\b/i.test(r)) return 'Voorzitter';
+    if (/^bewaker\b/i.test(r)) return 'Bewaker';
+    if (/^stem\s+rechter/i.test(r)) return 'Stem Rechter';
+    if (/^alle\s+juryleden/i.test(r)) return 'Alle juryleden';
+    return r;
+  }
+
+  const sceneRegex = /^(?:[①-⑳\d.\s-]*)(?:sc[eèé]ne\b|akte\b|(?:eerste|tweede|derde|vierde|vijfde|\d+)[\s]+bedrijf|proloog\b|epiloog\b)/i;
+  const colonRegex = /^([\p{L}\p{N}][\p{L}\p{N} .’'\-]{0,35}):\s*(.*)$/u;
+  const juryRegex = /^((?:\d+(?:e|de|ste)?\s*(?:\+\s*\d+(?:e|de|ste)?\s*)?)?\s*jurylid|voorzitter|bewaker|verteller|stem\s+rechter|alle\s+juryleden|iedereen)\b\s*[:\-]?\s*(.*)$/iu;
+  const parenRoleRegex = /^([\p{L}\p{N}][\p{L}\p{N} .’'\-]{1,25})\s+(\([^)]+\)\s*.*)$/u;
+
+  let inFrontMatter = false;
+
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index].trim();
-    if (!line || /^pagina\s+\d+$/i.test(line) || /^\d+$/.test(line) || line.toLowerCase() === title.trim().toLowerCase()) continue;
-    if (/^(?:[①-⑳\d.\s-]*)sc[eè]ne\s+(?:\d+|[①-⑳])/i.test(line) || /^(?:(?:eerste|tweede|derde|vierde|vijfde|\d+)[\s]+bedrijf|akte\s+\d+)$/i.test(line)) {
-      scene = { title: line, cards: [] }; scenes.push(scene); current = null; pending = []; continue;
+    if (!line) continue;
+    if (/^pagina\s+\d+$/i.test(line) || /^\d+$/.test(line) || line.toLowerCase() === (title || '').trim().toLowerCase()) continue;
+
+    if (/^(?:rolverdeling|personages|bezetting|personen)\b/i.test(line)) {
+      inFrontMatter = true;
+      continue;
     }
-    const roleMatch = line.match(/^([\p{L}\p{N}][\p{L}\p{N} .’'\-]{0,65}):\s*(.*)$/u);
-    const standalone = /^[\p{Lu}\d][\p{Lu}\d .’'\-]{1,45}$/u.test(line) && /\p{Lu}/u.test(line);
-    if (roleMatch || standalone) {
+
+    if (sceneRegex.test(line)) {
+      inFrontMatter = false;
+      if (scene && scene.cards.length === 0) {
+        scene.title = `${scene.title} – ${line}`;
+      } else {
+        scene = { title: line, cards: [] };
+        scenes.push(scene);
+      }
+      current = null;
+      pending = [];
+      continue;
+    }
+
+    if (inFrontMatter) continue;
+
+    let role = null;
+    let spoken = '';
+
+    if (colonRegex.test(line)) {
+      const m = line.match(colonRegex);
+      role = cleanRole(m[1]);
+      spoken = m[2].trim();
+    } else if (juryRegex.test(line)) {
+      const m = line.match(juryRegex);
+      role = cleanRole(m[1]);
+      spoken = m[2].trim();
+    } else if (parenRoleRegex.test(line)) {
+      const m = line.match(parenRoleRegex);
+      role = cleanRole(m[1]);
+      spoken = m[2].trim();
+    } else if (/^[\p{Lu}\d][\p{Lu}\d .’'\-]{1,35}$/u.test(line) && /\p{Lu}/u.test(line)) {
+      role = cleanRole(line);
+      spoken = '';
+    }
+
+    if (role) {
       ensureScene();
-      const role = roleMatch ? roleMatch[1].trim() : line;
-      const spoken = roleMatch ? roleMatch[2].trim() : '';
       current = { role, text: [...pending, spoken].filter(Boolean).join(' ') };
-      pending = []; scene.cards.push(current);
-    } else if (current) current.text += (current.text ? '\n' : '') + line;
-    else if (scene) pending.push(line.startsWith('(') ? line : `(${line})`);
-    else skipped.push({ line: index + 1, text: line });
+      pending = [];
+      scene.cards.push(current);
+    } else if (current) {
+      current.text += (current.text ? '\n' : '') + line;
+    } else if (scene) {
+      pending.push(line.startsWith('(') ? line : `(${line})`);
+    } else {
+      skipped.push({ line: index + 1, text: line });
+    }
   }
+
   const emptyCards = scenes.flatMap(s => s.cards).filter(c => !c.text.trim()).length;
   const cleanScenes = scenes.map(s => ({ ...s, cards: s.cards.filter(c => c.text.trim()) })).filter(s => s.cards.length);
   const data = window.cueValidateScript({ scenes: cleanScenes });
@@ -1029,9 +1096,35 @@ window.cuePdfText = async function (buffer) {
   let fullText = '';
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items.map(item => item.str).join(' ');
-    fullText += pageText + '\n\n';
+    const textContent = await page.getTextContent({ normalizeWhitespace: true });
+    let lastY = null;
+    let pageLines = [];
+    let currentLine = '';
+
+    for (const item of textContent.items) {
+      const str = item.str || '';
+      if (!str && !item.hasEOL) continue;
+
+      const y = item.transform ? item.transform[5] : null;
+      const isNewLine = item.hasEOL || (lastY !== null && y !== null && Math.abs(y - lastY) > 3.5);
+
+      if (isNewLine) {
+        if (currentLine.trim()) {
+          pageLines.push(currentLine.trim());
+        }
+        currentLine = str;
+      } else {
+        if (currentLine && !currentLine.endsWith(' ') && !str.startsWith(' ')) {
+          currentLine += ' ';
+        }
+        currentLine += str;
+      }
+      lastY = y;
+    }
+    if (currentLine.trim()) {
+      pageLines.push(currentLine.trim());
+    }
+    fullText += pageLines.join('\n') + '\n\n';
   }
   if (!fullText.trim()) throw new Error('Geen tekst gevonden in deze PDF. Waarschijnlijk is het een gescand document.');
   return fullText;
@@ -1251,7 +1344,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
        <div>
          <h3 style="margin:0 0 4px 0;font-size:15px">🔄 Versie & Cachebeheer</h3>
-         <p class="subtitle" style="font-size:12px;margin:0">Actieve build: <code>v5.20261023.1245</code></p>
+         <p class="subtitle" style="font-size:12px;margin:0">Actieve build: <code>v5.20261023.1310</code></p>
        </div>
        <button type="button" onclick="window.cueHardRefresh()" style="min-height:auto;padding:8px 16px;background:#17384c;border-color:var(--border);font-size:13px">Geforceerd verversen (cache omzeilen)</button>
      </div>
